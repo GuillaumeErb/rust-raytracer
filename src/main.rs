@@ -40,6 +40,31 @@ fn main() {
                 ),
             })
         );
+    objects.push(
+        Object::Plane (
+            Plane {
+                point: Point {
+                    x: 0f64,
+                    y: 5f64,
+                    z: -50f64,
+                },
+                normal: Vector3 {
+                    x: 0f64,
+                    y: 2f64.sqrt()/2f64,
+                    z: 2f64.sqrt()/2f64,
+                },
+                material: &Material::ConstantMaterial (
+                    ConstantMaterial {
+                        color: Color {
+                            red: 0f32,
+                            green: 0f32,
+                            blue: 1f32,
+                        }
+                    }
+                )
+            }
+        )
+    );
     let scene = Scene {
         objects: objects,
         camera: OrthographicCamera {
@@ -93,14 +118,23 @@ struct Sphere<'a> {
     material: &'a Material,
 }
 
+#[derive(Debug)]
+struct Plane<'a> {
+    point: Point,
+    normal: Vector3,
+    material: &'a Material,
+}
+
 enum Object <'a>{
-    Sphere(Sphere<'a>)
+    Sphere(Sphere<'a>),
+    Plane(Plane<'a>),
 }
 
 impl Object<'_> {
     pub fn get_material(&self) -> &Material {
         match *self {
-            Object::Sphere(ref obj) => obj.material
+            Object::Sphere(ref obj) => obj.material,
+            Object::Plane(ref obj) => obj.material,
         }
     }
 }
@@ -128,10 +162,32 @@ impl Intersectable for Sphere<'_> {
     }
 }
 
+impl Intersectable for Plane<'_> {
+    fn intersect(&self, ray: &Ray) -> Option<f64> {
+        //println!("{:?}", *self);
+        let normal = &self.normal;
+        let denom = normal.dot(&ray.direction);
+        //println!("normal={:?}", normal);
+        //println!("rayDirection={:?}", &ray.direction);
+        //println!("Denom={:?}", denom);
+        if denom.abs() > 1e-6 {
+            let v = &self.point - &ray.origin;
+            let distance = v.dot(&normal) / denom;
+            //println!("v={:?}", v);
+            //println!("Distance={:?}", distance);
+            if distance >= 0.0 {
+                return Some(distance);
+            }
+        }
+        None
+    }
+}
+
 impl Intersectable for Object<'_> {
     fn intersect(&self, ray: &Ray) -> Option<f64> {
         match self {
-            Object::Sphere(ref s) => s.intersect(ray)
+            Object::Sphere(ref obj) => obj.intersect(ray),
+            Object::Plane(ref obj) => obj.intersect(ray),
         }
     }
 }
@@ -358,6 +414,64 @@ mod tests {
                 red: 1f32,
                 green: 0f32,
                 blue: 0f32
+            }
+        );
+    }
+
+    #[test]
+    fn plane_test() {
+        let mut objects: Vec<Object> = vec![];
+        objects.push(
+            Object::Plane (
+                Plane {
+                    point: Point {
+                        x: 0f64,
+                        y: 0f64,
+                        z: -50f64,
+                    },
+                    normal: Vector3 {
+                        x: 0f64,
+                        y: 0f64,
+                        z: 1f64,
+                    },
+                    material: &Material::ConstantMaterial (
+                        ConstantMaterial {
+                            color: Color {
+                                red: 0f32,
+                                green: 0f32,
+                                blue: 1f32,
+                            }
+                        }
+                    )
+                }
+            )
+        );
+        let scene = Scene {
+            objects: objects,
+            camera: OrthographicCamera {
+                x_resolution: 50u16,
+                y_resolution: 25u16,
+            },
+        };
+        let ray = Ray {
+            origin: Point {
+                x: 0f64,
+                y: 0f64,
+                z: 0f64,
+            },
+            direction: Vector3 {
+                x: 0f64,
+                y: 0f64,
+                z: -1f64,
+            },
+        };
+        let resulting_color = cast_ray(&scene, &ray);
+        assert_eq!(
+            resulting_color,
+            Color {
+                red: 0f32,
+                green: 0f32,
+                blue: 1f32
             }
         );
     }
