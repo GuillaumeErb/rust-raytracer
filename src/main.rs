@@ -9,11 +9,15 @@ fn main() {
                     z: -50f64,
                 },
                 radius: 10f64,
-                color: Color {
-                    red: 100f32,
-                    green: 50f32,
-                    blue: 100f32,
-                },
+                material: &Material::ConstantMaterial (
+                    ConstantMaterial {
+                        color: Color {
+                            red: 0f32,
+                            green: 1f32,
+                            blue: 0f32,
+                        },
+                    },
+                ),
             })
         );
     objects.push(
@@ -25,11 +29,15 @@ fn main() {
                     z: -45f64,
                 },
                 radius: 6f64,
-                color: Color {
-                    red: 100f32,
-                    green: 50f32,
-                    blue: 50f32,
-                },
+                material: &Material::ConstantMaterial (
+                    ConstantMaterial {
+                        color: Color {
+                            red: 1f32,
+                            green: 0f32,
+                            blue: 0f32,
+                        },
+                    },
+                ),
             })
         );
     let scene = Scene {
@@ -43,6 +51,24 @@ fn main() {
     render_scene(scene);
 }
 
+#[derive(Debug)]
+pub enum Material {
+    ConstantMaterial(ConstantMaterial),
+}
+
+impl Material {
+    pub fn render_color(&self) -> Color {
+        match *self {
+            Material::ConstantMaterial(ref m) => m.color
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct ConstantMaterial {
+    color: Color,
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Color {
     red: f32,
@@ -53,28 +79,28 @@ pub struct Color {
 impl From<Color> for ansi_term::Color {
     fn from(item: Color) -> Self {
         ansi_term::Color::RGB(
-            item.red.round() as u8,
-            item.green.round() as u8,
-            item.blue.round() as u8,
+            (item.red * 255f32).round() as u8,
+            (item.green * 255f32).round() as u8,
+            (item.blue * 255f32).round() as u8,
         )
     }
 }
 
 #[derive(Debug)]
-struct Sphere {
+struct Sphere<'a> {
     center: Point,
     radius: f64,
-    color: Color,
+    material: &'a Material,
 }
 
-enum Object {
-    Sphere(Sphere)
+enum Object <'a>{
+    Sphere(Sphere<'a>)
 }
 
-impl Object {
-    fn color(&self) -> Color {
+impl Object<'_> {
+    pub fn get_material(&self) -> &Material {
         match *self {
-            Object::Sphere(ref s) => s.color
+            Object::Sphere(ref obj) => obj.material
         }
     }
 }
@@ -85,7 +111,7 @@ const BLACK: Color = Color {
     blue: 0f32,
 };
 
-impl Intersectable for Sphere {
+impl Intersectable for Sphere<'_> {
     fn intersect(&self, ray: &Ray) -> Option<f64> {
         let l = &self.center - &ray.origin;
         let t_ca = l.dot(&ray.direction);
@@ -102,7 +128,7 @@ impl Intersectable for Sphere {
     }
 }
 
-impl Intersectable for Object {
+impl Intersectable for Object<'_> {
     fn intersect(&self, ray: &Ray) -> Option<f64> {
         match self {
             Object::Sphere(ref s) => s.intersect(ray)
@@ -152,8 +178,8 @@ pub struct Ray {
     direction: Vector3,
 }
 
-pub struct Scene {
-    objects: Vec<Object>,
+pub struct Scene<'a> {
+    objects: Vec<Object<'a>>,
     camera: OrthographicCamera,
 }
 
@@ -193,7 +219,7 @@ pub fn render_scene(scene: Scene) {
 
 pub struct Intersection<'a> {
     distance: f64,
-    object: &'a Object,
+    object: &'a Object<'a>,
 }
 
 pub fn cast_ray(scene: &Scene, ray: &Ray) -> Color {
@@ -201,7 +227,7 @@ pub fn cast_ray(scene: &Scene, ray: &Ray) -> Color {
         .filter_map(|object| object.intersect(ray).map(|distance| Intersection { distance:distance, object:object }))
         .min_by(|i1, i2| i1.distance.partial_cmp(&i2.distance).unwrap());
 
-    intersection.map(|i| i.object.color()).unwrap_or(BLACK)
+    intersection.map(|i| (*i.object).get_material().render_color()).unwrap_or(BLACK)
 }
 
 #[cfg(test)]
@@ -221,11 +247,15 @@ mod tests {
                     z: -50f64,
                 },
                 radius: 10f64,
-                color: Color {
-                    red: 100f32,
-                    green: 50f32,
-                    blue: 100f32,
-                },
+                material: &Material::ConstantMaterial (
+                    ConstantMaterial {
+                        color: Color {
+                            red: 0f32,
+                            green: 1f32,
+                            blue: 0f32,
+                        },
+                    },
+                ),
             })
         );
         let scene = Scene {
@@ -251,9 +281,9 @@ mod tests {
         assert_eq!(
             resulting_color,
             Color {
-                red: 100f32,
-                green: 50f32,
-                blue: 100f32
+                red: 0f32,
+                green: 1f32,
+                blue: 0f32
             }
         );
     }
@@ -270,11 +300,15 @@ mod tests {
                     z: -50f64,
                 },
                 radius: 10f64,
-                color: Color {
-                    red: 100f32,
-                    green: 50f32,
-                    blue: 100f32,
-                },
+                material: &Material::ConstantMaterial (
+                    ConstantMaterial {
+                        color: Color {
+                            red: 0f32,
+                            green: 1f32,
+                            blue: 0f32,
+                        },
+                    },
+                ), 
             })
         );
     objects.push(
@@ -286,11 +320,15 @@ mod tests {
                     z: -45f64,
                 },
                 radius: 6f64,
-                color: Color {
-                    red: 100f32,
-                    green: 50f32,
-                    blue: 50f32,
-                },
+                material: &Material::ConstantMaterial (
+                    ConstantMaterial {
+                        color: Color {
+                            red: 1f32,
+                            green: 0f32,
+                            blue: 0f32,
+                        },
+                    },
+                ),
             })
         );
 
@@ -317,9 +355,9 @@ mod tests {
         assert_eq!(
             resulting_color,
             Color {
-                red: 100f32,
-                green: 50f32,
-                blue: 50f32
+                red: 1f32,
+                green: 0f32,
+                blue: 0f32
             }
         );
     }
