@@ -9,12 +9,12 @@ fn main() {
                     z: -50f64,
                 },
                 radius: 10f64,
-                material: &Material::ConstantMaterial (
-                    ConstantMaterial {
+                material: &Material::LambertMaterial (
+                    LambertMaterial {
                         color: Color {
-                            red: 0f32,
-                            green: 1f32,
-                            blue: 0f32,
+                            red: 0f64,
+                            green: 1f64,
+                            blue: 0f64,
                         },
                     },
                 ),
@@ -29,12 +29,12 @@ fn main() {
                     z: -45f64,
                 },
                 radius: 6f64,
-                material: &Material::ConstantMaterial (
-                    ConstantMaterial {
+                material: &Material::LambertMaterial (
+                    LambertMaterial {
                         color: Color {
-                            red: 1f32,
-                            green: 0f32,
-                            blue: 0f32,
+                            red: 1f64,
+                            green: 0f64,
+                            blue: 0f64,
                         },
                     },
                 ),
@@ -56,17 +56,30 @@ fn main() {
                 material: &Material::ConstantMaterial (
                     ConstantMaterial {
                         color: Color {
-                            red: 0f32,
-                            green: 0f32,
-                            blue: 1f32,
+                            red: 0f64,
+                            green: 0f64,
+                            blue: 1f64,
                         }
                     }
                 )
             }
         )
     );
+    let mut lights: Vec<Light> = vec![];
+    lights.push(
+        Light::DirectionalLight(
+            DirectionalLight {
+                direction: Vector3 {
+                    x: 3f64.sqrt()/3f64,
+                    y: 3f64.sqrt()/3f64,
+                    z: -3f64.sqrt()/3f64,
+                },
+            },
+        ),
+    );
     let scene = Scene {
         objects: objects,
+        lights: lights,
         camera: OrthographicCamera {
             x_resolution: 50u16,
             y_resolution: 25u16,
@@ -79,12 +92,14 @@ fn main() {
 #[derive(Debug)]
 pub enum Material {
     ConstantMaterial(ConstantMaterial),
+    LambertMaterial(LambertMaterial),
 }
 
 impl Material {
-    pub fn render_color(&self) -> Color {
+    pub fn render_color(&self, ray: &Ray, intersection: &Intersection, lights: &[Light]) -> Color {
         match *self {
-            Material::ConstantMaterial(ref m) => m.color
+            Material::ConstantMaterial(ref m) => m.color,
+            Material::LambertMaterial(ref m) => m.render_color(ray, intersection, lights),
         }
     }
 }
@@ -94,21 +109,70 @@ pub struct ConstantMaterial {
     color: Color,
 }
 
+#[derive(Debug)]
+pub struct LambertMaterial {
+    color: Color,
+}
+
+impl LambertMaterial {
+    pub fn render_color(&self, ray: &Ray, intersection: &Intersection, lights: &[Light]) -> Color {
+        let point = ray.origin.add(&ray.direction.times(intersection.distance));
+        let normal = intersection.object.get_normal(&point);
+        let mut diffuse_lights = 0f64;
+        for light in lights  {
+            diffuse_lights += normal.dot(&light.get_direction().times(-1f64)).max(0f64);
+            //println!("diffuse_lights={:?}", diffuse_lights);
+            //println!("normal={:?}", normal);
+            //println!("lightDirection={:?}", light.get_direction());
+
+        }
+        self.color.times(diffuse_lights/*.powi(5)*5f64*/)
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Color {
-    red: f32,
-    green: f32,
-    blue: f32,
+    red: f64,
+    green: f64,
+    blue: f64,
+}
+
+impl Color {
+    pub fn times(&self, scalar: f64) -> Color {
+        Color {
+            red : (self.red * scalar).min(1f64).max(0f64),
+            green: (self.green * scalar).min(1f64).max(0f64),
+            blue: (self.blue * scalar).min(1f64).max(0f64),
+        }
+    }
 }
 
 impl From<Color> for ansi_term::Color {
     fn from(item: Color) -> Self {
         ansi_term::Color::RGB(
-            (item.red * 255f32).round() as u8,
-            (item.green * 255f32).round() as u8,
-            (item.blue * 255f32).round() as u8,
+            (item.red * 255f64).round() as u8,
+            (item.green * 255f64).round() as u8,
+            (item.blue * 255f64).round() as u8,
         )
     }
+}
+
+#[derive(Debug)]
+pub enum Light {
+    DirectionalLight(DirectionalLight),
+}
+
+impl Light {
+    pub fn get_direction(&self) -> Vector3 {
+        match *self {
+            Light::DirectionalLight(ref light) => light.direction,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct DirectionalLight {
+    direction: Vector3,
 }
 
 #[derive(Debug)]
@@ -137,12 +201,27 @@ impl Object<'_> {
             Object::Plane(ref obj) => obj.material,
         }
     }
+
+    pub fn get_normal(&self, point: &Point) -> Vector3 {
+        match *self {
+            Object::Sphere(ref obj) => obj.get_normal(point),
+            Object::Plane(ref obj) => obj.normal,
+        }
+    }
+}
+
+impl Sphere<'_> {
+    pub fn get_normal(&self, point: &Point) -> Vector3 {
+        //println!("  Intersection Point:{:?}", point);
+        //println!("  center:{:?}", self.center);
+        (point - &self.center).normalize()
+    }
 }
 
 const BLACK: Color = Color {
-    red: 0f32,
-    green: 0f32,
-    blue: 0f32,
+    red: 0f64,
+    green: 0f64,
+    blue: 0f64,
 };
 
 impl Intersectable for Sphere<'_> {
@@ -164,17 +243,11 @@ impl Intersectable for Sphere<'_> {
 
 impl Intersectable for Plane<'_> {
     fn intersect(&self, ray: &Ray) -> Option<f64> {
-        //println!("{:?}", *self);
         let normal = &self.normal;
         let denom = normal.dot(&ray.direction);
-        //println!("normal={:?}", normal);
-        //println!("rayDirection={:?}", &ray.direction);
-        //println!("Denom={:?}", denom);
         if denom.abs() > 1e-6 {
             let v = &self.point - &ray.origin;
             let distance = v.dot(&normal) / denom;
-            //println!("v={:?}", v);
-            //println!("Distance={:?}", distance);
             if distance >= 0.0 {
                 return Some(distance);
             }
@@ -215,8 +288,18 @@ impl std::ops::Sub for &Point {
     }
 }
 
-#[derive(Debug)]
-struct Vector3 {
+impl Point {
+    fn add(&self, vector: &Vector3) -> Point {
+        Point {
+            x: self.x + vector.x,
+            y: self.y - vector.y,
+            z: self.z - vector.z,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct Vector3 {
     x: f64,
     y: f64,
     z: f64,
@@ -225,6 +308,25 @@ struct Vector3 {
 impl Vector3 {
     pub fn dot(&self, other: &Vector3) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+    pub fn times(&self, scalar: f64) -> Vector3 {
+        Vector3 {
+            x: self.x * scalar,
+            y: self.y * scalar,
+            z: self.z * scalar,
+        }
+    }
+
+    pub fn normalize(&self) -> Vector3 {
+        //println!("  To normalize {:?}", self);
+        let normalization = 1f64/(self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
+        //println!("  Normalization {:?}", normalization);
+        Vector3 {
+            x: self.x * normalization,
+            y: self.y * normalization,
+            z: self.z * normalization,
+        }
     }
 }
 
@@ -236,6 +338,7 @@ pub struct Ray {
 
 pub struct Scene<'a> {
     objects: Vec<Object<'a>>,
+    lights: Vec<Light>,
     camera: OrthographicCamera,
 }
 
@@ -283,7 +386,7 @@ pub fn cast_ray(scene: &Scene, ray: &Ray) -> Color {
         .filter_map(|object| object.intersect(ray).map(|distance| Intersection { distance:distance, object:object }))
         .min_by(|i1, i2| i1.distance.partial_cmp(&i2.distance).unwrap());
 
-    intersection.map(|i| (*i.object).get_material().render_color()).unwrap_or(BLACK)
+    intersection.map(|i| (*i.object).get_material().render_color(ray, &i, &scene.lights)).unwrap_or(BLACK)
 }
 
 #[cfg(test)]
@@ -306,9 +409,9 @@ mod tests {
                 material: &Material::ConstantMaterial (
                     ConstantMaterial {
                         color: Color {
-                            red: 0f32,
-                            green: 1f32,
-                            blue: 0f32,
+                            red: 0f64,
+                            green: 1f64,
+                            blue: 0f64,
                         },
                     },
                 ),
@@ -316,6 +419,7 @@ mod tests {
         );
         let scene = Scene {
             objects: objects,
+            lights: vec![],
             camera: OrthographicCamera {
                 x_resolution: 50u16,
                 y_resolution: 25u16,
@@ -337,9 +441,9 @@ mod tests {
         assert_eq!(
             resulting_color,
             Color {
-                red: 0f32,
-                green: 1f32,
-                blue: 0f32
+                red: 0f64,
+                green: 1f64,
+                blue: 0f64
             }
         );
     }
@@ -359,9 +463,9 @@ mod tests {
                 material: &Material::ConstantMaterial (
                     ConstantMaterial {
                         color: Color {
-                            red: 0f32,
-                            green: 1f32,
-                            blue: 0f32,
+                            red: 0f64,
+                            green: 1f64,
+                            blue: 0f64,
                         },
                     },
                 ), 
@@ -379,9 +483,9 @@ mod tests {
                 material: &Material::ConstantMaterial (
                     ConstantMaterial {
                         color: Color {
-                            red: 1f32,
-                            green: 0f32,
-                            blue: 0f32,
+                            red: 1f64,
+                            green: 0f64,
+                            blue: 0f64,
                         },
                     },
                 ),
@@ -390,6 +494,7 @@ mod tests {
 
         let scene = Scene {
             objects: objects,
+            lights: vec![],
             camera: OrthographicCamera {
                 x_resolution: 50u16,
                 y_resolution: 25u16,
@@ -411,9 +516,9 @@ mod tests {
         assert_eq!(
             resulting_color,
             Color {
-                red: 1f32,
-                green: 0f32,
-                blue: 0f32
+                red: 1f64,
+                green: 0f64,
+                blue: 0f64
             }
         );
     }
@@ -437,9 +542,9 @@ mod tests {
                     material: &Material::ConstantMaterial (
                         ConstantMaterial {
                             color: Color {
-                                red: 0f32,
-                                green: 0f32,
-                                blue: 1f32,
+                                red: 0f64,
+                                green: 0f64,
+                                blue: 1f64,
                             }
                         }
                     )
@@ -448,6 +553,7 @@ mod tests {
         );
         let scene = Scene {
             objects: objects,
+            lights: vec![],
             camera: OrthographicCamera {
                 x_resolution: 50u16,
                 y_resolution: 25u16,
@@ -469,9 +575,9 @@ mod tests {
         assert_eq!(
             resulting_color,
             Color {
-                red: 0f32,
-                green: 0f32,
-                blue: 1f32
+                red: 0f64,
+                green: 0f64,
+                blue: 1f64
             }
         );
     }
