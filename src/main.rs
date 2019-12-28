@@ -190,11 +190,7 @@ pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
         origin: *point,
         direction: light_direction.times(-1f64),
     };
-    //println!("Light Direction:{:?}", light_direction);
-    //println!("Shadow ray:{:?}", shadow_ray);
-    //for object in scene.objects.iter() {
-    //println!("Intersection with {:?} at {:?}", object, object.intersect(&shadow_ray));
-    //}
+
     scene
         .objects
         .iter()

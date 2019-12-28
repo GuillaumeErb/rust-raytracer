@@ -1,7 +1,7 @@
-use crate::Ray;
 use crate::Object;
-use crate::Sphere;
 use crate::Plane;
+use crate::Ray;
+use crate::Sphere;
 
 pub trait Intersectable {
     fn intersect(&self, ray: &Ray) -> Option<f64>;
@@ -49,5 +49,64 @@ impl Intersectable for Plane {
             }
         }
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Point;
+    use crate::Vector3;
+    #[test]
+    fn sphere_intersection() {
+        let sphere = Sphere {
+            center: Point {
+                x: 0f64,
+                y: 0f64,
+                z: 0f64,
+            },
+            radius: 4f64,
+        };
+        let ray = Ray {
+            origin: Point {
+                x: -10f64,
+                y: 0f64,
+                z: 0f64,
+            },
+            direction: Vector3 {
+                x: 1f64,
+                y: 0f64,
+                z: 0f64,
+            },
+        };
+        let intersection = sphere.intersect(&ray);
+        assert_eq!(intersection.is_some(), true);
+        assert_eq!(intersection.unwrap(), 6f64);
+    }
+
+    #[test]
+    fn sphere_no_intersection() {
+        let sphere = Sphere {
+            center: Point {
+                x: 0f64,
+                y: 0f64,
+                z: 0f64,
+            },
+            radius: 4f64,
+        };
+        let ray = Ray {
+            origin: Point {
+                x: -10f64,
+                y: 0f64,
+                z: 0f64,
+            },
+            direction: Vector3 {
+                x: -1f64,
+                y: 0f64,
+                z: 0f64,
+            },
+        };
+        let intersection = sphere.intersect(&ray);
+        assert_eq!(intersection.is_none(), true);
     }
 }
