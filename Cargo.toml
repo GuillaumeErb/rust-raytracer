@@ -9,4 +9,5 @@ edition = "2018"
 [dependencies]
 ansi_term = "0.12"
 ferris-says = "0.1"
-image = "0.22.1"
+image = "0.22.3"
+sdl2 = "0.32.2"

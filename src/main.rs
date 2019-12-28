@@ -7,10 +7,11 @@ use geometry::Point;
 use geometry::Ray;
 use geometry::Sphere;
 use geometry::Vector3;
-
 use intersectable::Intersectable;
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 
-fn main() {
+fn main() -> Result<(), String> {
     let mut objects: Vec<ObjectWithMaterial> = vec![];
     objects.push(ObjectWithMaterial {
         geometry: Object::Sphere(Sphere {
@@ -72,14 +73,14 @@ fn main() {
         }
         .normalize(),
     }));
-    lights.push(Light::DirectionalLight(DirectionalLight {
+    /*lights.push(Light::DirectionalLight(DirectionalLight {
         direction: Vector3 {
             x: 0f64,
             y: 0f64,
             z: 1f64,
         }
         .normalize(),
-    }));
+    }));*/
     let scene = Scene {
         objects: objects,
         lights: lights,
@@ -91,7 +92,11 @@ fn main() {
         },
     };
 
-    render_scene(scene);
+    //render_scene(scene);
+
+    render_scene_sdl2(scene)?;
+
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -168,6 +173,16 @@ impl From<Color> for image::Rgb<u8> {
             ((item.green as f32) * 255.0) as u8,
             ((item.blue as f32) * 255.0) as u8,
         ])
+    }
+}
+
+impl From<Color> for sdl2::pixels::Color {
+    fn from(item: Color) -> Self {
+        sdl2::pixels::Color::RGB(
+            ((item.red as f32) * 255.0) as u8,
+            ((item.green as f32) * 255.0) as u8,
+            ((item.blue as f32) * 255.0) as u8,
+        )
     }
 }
 
@@ -265,6 +280,69 @@ pub fn render_scene(scene: Scene) {
         *pixel = pixel_color.into();
     }
     imgbuf.save("output.png").unwrap();
+}
+
+pub fn render_scene_sdl2(scene: Scene) -> Result<(), String> {
+    let sdl_context = sdl2::init().unwrap();
+    let video_subsystem = sdl_context.video().unwrap();
+
+    let width = 1000;
+    let height = 800;
+
+    let window = video_subsystem
+        .window("rust raytracer", width, height)
+        .position_centered()
+        .build()
+        .map_err(|e| e.to_string())?;
+    let mut canvas = window
+        .into_canvas()
+        .software()
+        .build()
+        .map_err(|e| e.to_string())?;
+    let creator = canvas.texture_creator();
+    let mut texture = creator
+        .create_texture_target(sdl2::pixels::PixelFormatEnum::RGBA8888, width, height)
+        .map_err(|e| e.to_string())?;
+
+    canvas
+        .with_texture_canvas(&mut texture, |texture_canvas| {
+            texture_canvas.clear();
+            for y in 0..scene.camera.y_resolution {
+                for x in 0..scene.camera.x_resolution {
+                    let ray = create_view_ray(x, y, &scene.camera);
+                    let pixel_color = cast_ray(&scene, &ray);
+                    let sdl2_color: sdl2::pixels::Color = pixel_color.into();
+                    texture_canvas.set_draw_color(sdl2_color);
+                    texture_canvas
+                        .draw_point(sdl2::rect::Point::new(x as i32, y as i32))
+                        .unwrap();
+                }
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    canvas.set_draw_color(sdl2::pixels::Color::RGBA(0, 0, 0, 255));
+    canvas.clear();
+    canvas.copy(
+        &texture,
+        None,
+        Some(sdl2::rect::Rect::new(0, 0, width, height)),
+    )?;
+    canvas.present();
+
+    'mainloop: loop {
+        for event in sdl_context.event_pump()?.poll_iter() {
+            match event {
+                Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                }
+                | Event::Quit { .. } => break 'mainloop,
+                _ => {}
+            }
+        }
+    }
+
+    Ok(())
 }
 
 pub struct Intersection<'a> {
