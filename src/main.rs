@@ -1,114 +1,85 @@
+mod geometry;
+mod intersectable;
+
+use geometry::Object;
+use geometry::Plane;
+use geometry::Point;
+use geometry::Ray;
+use geometry::Sphere;
+use geometry::Vector3;
+
+use intersectable::Intersectable;
+
 fn main() {
-    let mut objects: Vec<Object> = vec![];
-    objects.push(
-        Object::Sphere (
-            Sphere {
-                center: Point {
-                    x: 0f64,
-                    y: 0f64,
-                    z: -70f64,
-                },
-                radius: 200f64,
-                material: &Material::LambertMaterial (
-                    LambertMaterial {
-                        color: Color {
-                            red: 0f64,
-                            green: 1f64,
-                            blue: 0f64,
-                        },
-                    },
-                ),
-            })
-        );
-    objects.push(
-        Object::Sphere (
-            Sphere {
-                center: Point {
-                    x: 40f64,
-                    y: 20f64,
-                    z: -10f64,
-                },
-                radius: 150f64,
-                material: &Material::LambertMaterial (
-                    LambertMaterial {
-                        color: Color {
-                            red: 1f64,
-                            green: 0f64,
-                            blue: 0f64,
-                        },
-                    },
-                ),
-            })
-        );
-        objects.push(
-        Object::Sphere (
-            Sphere {
-                center: Point {
-                    x: 350f64,
-                    y: 0f64,
-                    z: -70f64,
-                },
-                radius: 50f64,
-                material: &Material::LambertMaterial (
-                    LambertMaterial {
-                        color: Color {
-                            red: 0f64,
-                            green: 0f64,
-                            blue: 1f64,
-                        },
-                    },
-                ),
-            })
-        );
-        /*
-    objects.push(
-        Object::Plane (
-            Plane {
-                point: Point {
-                    x: 0f64,
-                    y: 5f64,
-                    z: -50f64,
-                },
-                normal: Vector3 {
-                    x: 0f64,
-                    y: -2f64.sqrt()/2f64,
-                    z: -2f64.sqrt()/2f64,
-                },
-                material: &Material::LambertMaterial (
-                    LambertMaterial {
-                        color: Color {
-                            red: 0f64,
-                            green: 0f64,
-                            blue: 1f64,
-                        }
-                    }
-                )
-            }
-        )
-    );*/
+    let mut objects: Vec<ObjectWithMaterial> = vec![];
+    objects.push(ObjectWithMaterial {
+        geometry: Object::Sphere(Sphere {
+            center: Point {
+                x: 0f64,
+                y: 0f64,
+                z: -70f64,
+            },
+            radius: 200f64,
+        }),
+        material: Material::LambertMaterial(LambertMaterial {
+            color: Color {
+                red: 0f64,
+                green: 1f64,
+                blue: 0f64,
+            },
+        }),
+    });
+    objects.push(ObjectWithMaterial {
+        geometry: Object::Sphere(Sphere {
+            center: Point {
+                x: 40f64,
+                y: 20f64,
+                z: -10f64,
+            },
+            radius: 150f64,
+        }),
+        material: Material::LambertMaterial(LambertMaterial {
+            color: Color {
+                red: 1f64,
+                green: 0f64,
+                blue: 0f64,
+            },
+        }),
+    });
+    objects.push(ObjectWithMaterial {
+        geometry: Object::Sphere(Sphere {
+            center: Point {
+                x: 350f64,
+                y: 0f64,
+                z: -70f64,
+            },
+            radius: 50f64,
+        }),
+        material: Material::LambertMaterial(LambertMaterial {
+            color: Color {
+                red: 0f64,
+                green: 0f64,
+                blue: 1f64,
+            },
+        }),
+    });
     let mut lights: Vec<Light> = vec![];
-    lights.push(
-        Light::DirectionalLight(
-            DirectionalLight {
-                direction: Vector3 {
-                    x: -1f64,
-                    y: 0f64,
-                    z: 0f64,
-                }.normalize(),
-            },
-        ),
-    );
-    lights.push(
-        Light::DirectionalLight(
-            DirectionalLight {
-                direction: Vector3 {
-                    x: 0f64,
-                    y: 0f64,
-                    z: 1f64,
-                }.normalize(),
-            },
-        ),
-    );
+    lights.push(Light::DirectionalLight(DirectionalLight {
+        direction: Vector3 {
+            x: -1f64,
+            y: 0f64,
+            z: 0f64,
+        }
+        .normalize(),
+    }));
+    lights.push(Light::DirectionalLight(DirectionalLight {
+        direction: Vector3 {
+            x: 0f64,
+            y: 0f64,
+            z: 1f64,
+        }
+        .normalize(),
+    }));
     let scene = Scene {
         objects: objects,
         lights: lights,
@@ -151,19 +122,15 @@ pub struct LambertMaterial {
 impl LambertMaterial {
     pub fn render_color(&self, ray: &Ray, intersection: &Intersection, scene: &Scene) -> Color {
         let point = ray.origin.add(&ray.direction.times(intersection.distance));
-        let normal = intersection.object.get_normal(&point);
+        let normal = intersection.object.geometry.get_normal(&point);
         let mut diffuse_lights = 0f64;
-        for light in &scene.lights  {
+        for light in &scene.lights {
             if is_in_shadow(&point, &light, scene) {
-                //println!("I'm in the dark");
                 continue;
             }
             diffuse_lights += normal.dot(&light.get_direction().times(-1f64)).max(0f64);
-            //println!("diffuse_lights={:?}", diffuse_lights);
-            //println!("normal={:?}", normal);
-            //println!("lightDirection={:?}", light.get_direction());
         }
-        self.color.times(diffuse_lights/*.powi(5)*5f64*/)
+        self.color.times(diffuse_lights /*.powi(5)*5f64*/)
     }
 }
 
@@ -177,7 +144,7 @@ pub struct Color {
 impl Color {
     pub fn times(&self, scalar: f64) -> Color {
         Color {
-            red : (self.red * scalar).min(1f64).max(0f64),
+            red: (self.red * scalar).min(1f64).max(0f64),
             green: (self.green * scalar).min(1f64).max(0f64),
             blue: (self.blue * scalar).min(1f64).max(0f64),
         }
@@ -198,8 +165,9 @@ impl From<Color> for image::Rgb<u8> {
     fn from(item: Color) -> Self {
         image::Rgb([
             ((item.red as f32) * 255.0) as u8,
-        ((item.green as f32) * 255.0) as u8,
-        ((item.blue as f32) * 255.0) as u8])
+            ((item.green as f32) * 255.0) as u8,
+            ((item.blue as f32) * 255.0) as u8,
+        ])
     }
 }
 
@@ -224,12 +192,14 @@ pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
     };
     //println!("Light Direction:{:?}", light_direction);
     //println!("Shadow ray:{:?}", shadow_ray);
-    
-    for object in scene.objects.iter() {
-        //println!("Intersection with {:?} at {:?}", object, object.intersect(&shadow_ray));
-    }
-    scene.objects.iter()
-        .filter_map(|object| object.intersect(&shadow_ray)).any(|_d| true)
+    //for object in scene.objects.iter() {
+    //println!("Intersection with {:?} at {:?}", object, object.intersect(&shadow_ray));
+    //}
+    scene
+        .objects
+        .iter()
+        .filter_map(|object| object.geometry.intersect(&shadow_ray))
+        .any(|_d| true)
 }
 
 #[derive(Debug)]
@@ -237,48 +207,9 @@ pub struct DirectionalLight {
     direction: Vector3,
 }
 
-#[derive(Debug)]
-struct Sphere<'a> {
-    center: Point,
-    radius: f64,
-    material: &'a Material,
-}
-
-#[derive(Debug)]
-struct Plane<'a> {
-    point: Point,
-    normal: Vector3,
-    material: &'a Material,
-}
-
-#[derive(Debug)]
-enum Object <'a>{
-    Sphere(Sphere<'a>),
-    Plane(Plane<'a>),
-}
-
-impl Object<'_> {
-    pub fn get_material(&self) -> &Material {
-        match *self {
-            Object::Sphere(ref obj) => obj.material,
-            Object::Plane(ref obj) => obj.material,
-        }
-    }
-
-    pub fn get_normal(&self, point: &Point) -> Vector3 {
-        match *self {
-            Object::Sphere(ref obj) => obj.get_normal(point),
-            Object::Plane(ref obj) => obj.normal,
-        }
-    }
-}
-
-impl Sphere<'_> {
-    pub fn get_normal(&self, point: &Point) -> Vector3 {
-        //println!("  Intersection Point:{:?}", point);
-        //println!("  center:{:?}", self.center);
-        (point - &self.center).normalize()
-    }
+struct ObjectWithMaterial {
+    geometry: Object,
+    material: Material,
 }
 
 const BLACK: Color = Color {
@@ -287,124 +218,8 @@ const BLACK: Color = Color {
     blue: 0f64,
 };
 
-impl Intersectable for Sphere<'_> {
-    fn intersect(&self, ray: &Ray) -> Option<f64> {
-        let l = &self.center - &ray.origin;
-        let t_ca = l.dot(&ray.direction);
-        if t_ca < 0f64 {
-            None
-        } else {
-            let d2 = l.dot(&l) - (t_ca * t_ca);
-            let r2 = self.radius * self.radius;
-            if r2 < d2 {
-                None
-            } else {
-                let t_hc = (r2 - d2).sqrt();
-                let t1 = t_ca - t_hc;
-                let t2 = t_ca + t_hc;
-                Some(t1.min(t2))
-            }
-        }
-    }
-}
-
-impl Intersectable for Plane<'_> {
-    fn intersect(&self, ray: &Ray) -> Option<f64> {
-        let normal = &self.normal;
-        let denom = normal.dot(&ray.direction);
-        if denom.abs() > 1e-6 {
-            let v = &self.point - &ray.origin;
-            let distance = v.dot(&normal) / denom;
-            if distance >= 0.0 {
-                return Some(distance);
-            }
-        }
-        None
-    }
-}
-
-impl Intersectable for Object<'_> {
-    fn intersect(&self, ray: &Ray) -> Option<f64> {
-        match self {
-            Object::Sphere(ref obj) => obj.intersect(ray),
-            Object::Plane(ref obj) => obj.intersect(ray),
-        }
-    }
-}
-
-pub trait Intersectable {
-    fn intersect(&self, ray: &Ray) -> Option<f64>;
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct Point {
-    x: f64,
-    y: f64,
-    z: f64,
-}
-
-impl std::ops::Sub for &Point {
-    type Output = Vector3;
-
-    fn sub(self, other: &Point) -> Vector3 {
-        Vector3 {
-            x: self.x - other.x,
-            y: self.y - other.y,
-            z: self.z - other.z,
-        }
-    }
-}
-
-impl Point {
-    fn add(&self, vector: &Vector3) -> Point {
-        Point {
-            x: self.x + vector.x,
-            y: self.y - vector.y,
-            z: self.z - vector.z,
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct Vector3 {
-    x: f64,
-    y: f64,
-    z: f64,
-}
-
-impl Vector3 {
-    pub fn dot(&self, other: &Vector3) -> f64 {
-        self.x * other.x + self.y * other.y + self.z * other.z
-    }
-
-    pub fn times(&self, scalar: f64) -> Vector3 {
-        Vector3 {
-            x: self.x * scalar,
-            y: self.y * scalar,
-            z: self.z * scalar,
-        }
-    }
-
-    pub fn normalize(&self) -> Vector3 {
-        //println!("  To normalize {:?}", self);
-        let normalization = 1f64/(self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
-        //println!("  Normalization {:?}", normalization);
-        Vector3 {
-            x: self.x * normalization,
-            y: self.y * normalization,
-            z: self.z * normalization,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Ray {
-    origin: Point,
-    direction: Vector3,
-}
-
-pub struct Scene<'a> {
-    objects: Vec<Object<'a>>,
+pub struct Scene {
+    objects: Vec<ObjectWithMaterial>,
     lights: Vec<Light>,
     camera: OrthographicCamera,
 }
@@ -444,27 +259,38 @@ pub fn render_scene_console(scene: Scene) {
 }
 
 pub fn render_scene(scene: Scene) {
-    let mut imgbuf: image::RgbImage = image::ImageBuffer::new(scene.camera.x_resolution as u32, scene.camera.y_resolution as u32);
+    let mut imgbuf: image::RgbImage = image::ImageBuffer::new(
+        scene.camera.x_resolution as u32,
+        scene.camera.y_resolution as u32,
+    );
     for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
-            let ray = create_view_ray(x as u16, y as u16, &scene.camera);
-            let pixel_color = cast_ray(&scene, &ray);
-            *pixel = pixel_color.into();
+        let ray = create_view_ray(x as u16, y as u16, &scene.camera);
+        let pixel_color = cast_ray(&scene, &ray);
+        *pixel = pixel_color.into();
     }
     imgbuf.save("output.png").unwrap();
 }
 
-
 pub struct Intersection<'a> {
     distance: f64,
-    object: &'a Object<'a>,
+    object: &'a ObjectWithMaterial,
 }
 
 pub fn cast_ray(scene: &Scene, ray: &Ray) -> Color {
-    let intersection = scene.objects.iter()
-        .filter_map(|object| object.intersect(ray).map(|distance| Intersection { distance:distance, object:object }))
+    let intersection = scene
+        .objects
+        .iter()
+        .filter_map(|object| {
+            object.geometry.intersect(ray).map(|distance| Intersection {
+                distance: distance,
+                object: &object,
+            })
+        })
         .min_by(|i1, i2| i1.distance.partial_cmp(&i2.distance).unwrap());
 
-    intersection.map(|i| (*i.object).get_material().render_color(ray, &i, &scene)).unwrap_or(BLACK)
+    intersection
+        .map(|i| (*i.object).material.render_color(ray, &i, &scene))
+        .unwrap_or(BLACK)
 }
 
 #[cfg(test)]
@@ -474,27 +300,24 @@ mod tests {
 
     #[test]
     fn single_sphere() {
-        let mut objects: Vec<Object> = vec![];
-    objects.push(
-        Object::Sphere (
-            Sphere {
+        let mut objects: Vec<ObjectWithMaterial> = vec![];
+        objects.push(ObjectWithMaterial {
+            geometry: Object::Sphere(Sphere {
                 center: Point {
                     x: 0f64,
                     y: 0f64,
                     z: -50f64,
                 },
                 radius: 10f64,
-                material: &Material::ConstantMaterial (
-                    ConstantMaterial {
-                        color: Color {
-                            red: 0f64,
-                            green: 1f64,
-                            blue: 0f64,
-                        },
-                    },
-                ),
-            })
-        );
+            }),
+            material: Material::ConstantMaterial(ConstantMaterial {
+                color: Color {
+                    red: 0f64,
+                    green: 1f64,
+                    blue: 0f64,
+                },
+            }),
+        });
         let scene = Scene {
             objects: objects,
             lights: vec![],
@@ -526,41 +349,35 @@ mod tests {
         );
     }
 
-#[test]
+    #[test]
     fn single_sphere_lambert() {
-        let mut objects: Vec<Object> = vec![];
-    objects.push(
-        Object::Sphere (
-            Sphere {
+        let mut objects: Vec<ObjectWithMaterial> = vec![];
+        objects.push(ObjectWithMaterial {
+            geometry: Object::Sphere(Sphere {
                 center: Point {
                     x: 0f64,
                     y: 0f64,
                     z: -50f64,
                 },
                 radius: 10f64,
-                material: &Material::LambertMaterial (
-                    LambertMaterial {
-                        color: Color {
-                            red: 0f64,
-                            green: 1f64,
-                            blue: 0f64,
-                        },
-                    },
-                ),
-            })
-        );
-        let mut lights: Vec<Light> = vec![];
-        lights.push(
-            Light::DirectionalLight(
-                DirectionalLight {
-                    direction: Vector3 {
-                        x: 0f64,
-                        y: 0f64,
-                        z: -1f64,
-                    }.normalize(),
+            }),
+            material: Material::LambertMaterial(LambertMaterial {
+                color: Color {
+                    red: 0f64,
+                    green: 1f64,
+                    blue: 0f64,
                 },
-            ),
-        );
+            }),
+        });
+        let mut lights: Vec<Light> = vec![];
+        lights.push(Light::DirectionalLight(DirectionalLight {
+            direction: Vector3 {
+                x: 0f64,
+                y: 0f64,
+                z: -1f64,
+            }
+            .normalize(),
+        }));
         let scene = Scene {
             objects: objects,
             lights: lights,
@@ -594,47 +411,41 @@ mod tests {
 
     #[test]
     fn two_aligned_spheres() {
-        let mut objects: Vec<Object> = vec![];
-    objects.push(
-        Object::Sphere (
-            Sphere {
+        let mut objects: Vec<ObjectWithMaterial> = vec![];
+        objects.push(ObjectWithMaterial {
+            geometry: Object::Sphere(Sphere {
                 center: Point {
                     x: 0f64,
                     y: 0f64,
                     z: -50f64,
                 },
                 radius: 10f64,
-                material: &Material::ConstantMaterial (
-                    ConstantMaterial {
-                        color: Color {
-                            red: 0f64,
-                            green: 1f64,
-                            blue: 0f64,
-                        },
-                    },
-                ), 
-            })
-        );
-    objects.push(
-        Object::Sphere (
-            Sphere {
+            }),
+            material: Material::ConstantMaterial(ConstantMaterial {
+                color: Color {
+                    red: 0f64,
+                    green: 1f64,
+                    blue: 0f64,
+                },
+            }),
+        });
+        objects.push(ObjectWithMaterial {
+            geometry: Object::Sphere(Sphere {
                 center: Point {
                     x: 0f64,
                     y: 0f64,
                     z: -45f64,
                 },
                 radius: 6f64,
-                material: &Material::ConstantMaterial (
-                    ConstantMaterial {
-                        color: Color {
-                            red: 1f64,
-                            green: 0f64,
-                            blue: 0f64,
-                        },
-                    },
-                ),
-            })
-        );
+            }),
+            material: Material::ConstantMaterial(ConstantMaterial {
+                color: Color {
+                    red: 1f64,
+                    green: 0f64,
+                    blue: 0f64,
+                },
+            }),
+        });
 
         let scene = Scene {
             objects: objects,
@@ -669,32 +480,28 @@ mod tests {
 
     #[test]
     fn plane_test() {
-        let mut objects: Vec<Object> = vec![];
-        objects.push(
-            Object::Plane (
-                Plane {
-                    point: Point {
-                        x: 0f64,
-                        y: 0f64,
-                        z: -50f64,
-                    },
-                    normal: Vector3 {
-                        x: 0f64,
-                        y: 0f64,
-                        z: 1f64,
-                    },
-                    material: &Material::ConstantMaterial (
-                        ConstantMaterial {
-                            color: Color {
-                                red: 0f64,
-                                green: 0f64,
-                                blue: 1f64,
-                            }
-                        }
-                    )
-                }
-            )
-        );
+        let mut objects: Vec<ObjectWithMaterial> = vec![];
+        objects.push(ObjectWithMaterial {
+            geometry: Object::Plane(Plane {
+                point: Point {
+                    x: 0f64,
+                    y: 0f64,
+                    z: -50f64,
+                },
+                normal: Vector3 {
+                    x: 0f64,
+                    y: 0f64,
+                    z: 1f64,
+                },
+            }),
+            material: Material::ConstantMaterial(ConstantMaterial {
+                color: Color {
+                    red: 0f64,
+                    green: 0f64,
+                    blue: 1f64,
+                },
+            }),
+        });
         let scene = Scene {
             objects: objects,
             lights: vec![],
