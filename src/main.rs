@@ -11,6 +11,7 @@ use geometry::Ray;
 use geometry::Sphere;
 use geometry::Vector3;
 use intersectable::Intersectable;
+use rayon::prelude::*;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::collections::HashMap;
@@ -348,7 +349,7 @@ pub fn render_frame_scene_sdl2(
 ) -> Result<(), String> {
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
-        .into_iter()
+        .par_iter()
         .map(|view_ray| ((view_ray.x, view_ray.y), cast_ray(&scene, &view_ray.ray)))
         .collect();
     canvas
