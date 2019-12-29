@@ -1,6 +1,9 @@
+mod camera;
 mod geometry;
 mod intersectable;
 
+use camera::GeneratingViewRays;
+use camera::OrthographicCamera;
 use geometry::Object;
 use geometry::Plane;
 use geometry::Point;
@@ -10,6 +13,7 @@ use geometry::Vector3;
 use intersectable::Intersectable;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use std::collections::HashMap;
 
 fn main() -> Result<(), String> {
     let mut objects: Vec<ObjectWithMaterial> = vec![];
@@ -85,8 +89,6 @@ fn main() -> Result<(), String> {
         objects: objects,
         lights: lights,
         camera: OrthographicCamera {
-            //x_resolution: 2u16,
-            //y_resolution: 2u16,
             x_resolution: 1000u16,
             y_resolution: 800u16,
         },
@@ -223,7 +225,7 @@ struct ObjectWithMaterial {
     material: Material,
 }
 
-const BLACK: Color = Color {
+pub const BLACK: Color = Color {
     red: 0f64,
     green: 0f64,
     blue: 0f64,
@@ -235,34 +237,16 @@ pub struct Scene {
     camera: OrthographicCamera,
 }
 
-pub struct OrthographicCamera {
-    x_resolution: u16,
-    y_resolution: u16,
-}
-
-pub fn create_view_ray(x: u16, y: u16, camera: &OrthographicCamera) -> Ray {
-    let x_shift = camera.x_resolution as f64 / 2f64;
-    let y_shift = camera.y_resolution as f64 / 2f64;
-    Ray {
-        origin: Point {
-            x: x as f64 - x_shift,
-            y: y as f64 - y_shift,
-            z: 0f64,
-        },
-        direction: Vector3 {
-            x: 0f64,
-            y: 0f64,
-            z: -1f64,
-        },
-    }
-}
-
 pub fn render_scene_console(scene: Scene) {
+    let viewport = scene.camera.generate_viewport();
+    let screen: HashMap<_, _> = viewport
+        .into_iter()
+        .map(|view_ray| ((view_ray.x, view_ray.y), cast_ray(&scene, &view_ray.ray)))
+        .collect();
+
     for y in 0..scene.camera.y_resolution {
         for x in 0..scene.camera.x_resolution {
-            let ray = create_view_ray(x, y, &scene.camera);
-            let pixel_color = cast_ray(&scene, &ray);
-            let ansi_color: ansi_term::Color = pixel_color.into();
+            let ansi_color: ansi_term::Color = screen[&(x, y)].into();
             print!("{}", ansi_color.paint("█"));
         }
         println!();
@@ -270,14 +254,19 @@ pub fn render_scene_console(scene: Scene) {
 }
 
 pub fn render_scene(scene: Scene) {
+    let viewport = scene.camera.generate_viewport();
+    let screen: HashMap<_, _> = viewport
+        .into_iter()
+        .map(|view_ray| ((view_ray.x, view_ray.y), cast_ray(&scene, &view_ray.ray)))
+        .collect();
+
     let mut imgbuf: image::RgbImage = image::ImageBuffer::new(
         scene.camera.x_resolution as u32,
         scene.camera.y_resolution as u32,
     );
+
     for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
-        let ray = create_view_ray(x as u16, y as u16, &scene.camera);
-        let pixel_color = cast_ray(&scene, &ray);
-        *pixel = pixel_color.into();
+        *pixel = screen[&(x as u16, y as u16)].into();
     }
     imgbuf.save("output.png").unwrap();
 }
@@ -286,8 +275,8 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let width = 1000;
-    let height = 800;
+    let width: u32 = scene.camera.x_resolution.into();
+    let height: u32 = scene.camera.y_resolution.into();
 
     let window = video_subsystem
         .window("rust raytracer", width, height)
@@ -357,14 +346,17 @@ pub fn render_frame_scene_sdl2(
     width: u32,
     height: u32,
 ) -> Result<(), String> {
+    let viewport = scene.camera.generate_viewport();
+    let screen: HashMap<_, _> = viewport
+        .into_iter()
+        .map(|view_ray| ((view_ray.x, view_ray.y), cast_ray(&scene, &view_ray.ray)))
+        .collect();
     canvas
         .with_texture_canvas(texture, |texture_canvas| {
             texture_canvas.clear();
             for y in 0..scene.camera.y_resolution {
                 for x in 0..scene.camera.x_resolution {
-                    let ray = create_view_ray(x, y, &scene.camera);
-                    let pixel_color = cast_ray(&scene, &ray);
-                    let sdl2_color: sdl2::pixels::Color = pixel_color.into();
+                    let sdl2_color: sdl2::pixels::Color = screen[&(x, y)].into();
                     texture_canvas.set_draw_color(sdl2_color);
                     texture_canvas
                         .draw_point(sdl2::rect::Point::new(x as i32, y as i32))
