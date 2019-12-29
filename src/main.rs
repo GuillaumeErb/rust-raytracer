@@ -81,7 +81,7 @@ fn main() -> Result<(), String> {
         }
         .normalize(),
     }));*/
-    let scene = Scene {
+    let mut scene = Scene {
         objects: objects,
         lights: lights,
         camera: OrthographicCamera {
@@ -94,7 +94,7 @@ fn main() -> Result<(), String> {
 
     //render_scene(scene);
 
-    render_scene_sdl2(scene)?;
+    render_scene_sdl2(&mut scene)?;
 
     Ok(())
 }
@@ -282,7 +282,7 @@ pub fn render_scene(scene: Scene) {
     imgbuf.save("output.png").unwrap();
 }
 
-pub fn render_scene_sdl2(scene: Scene) -> Result<(), String> {
+pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
@@ -304,8 +304,61 @@ pub fn render_scene_sdl2(scene: Scene) -> Result<(), String> {
         .create_texture_target(sdl2::pixels::PixelFormatEnum::RGBA8888, width, height)
         .map_err(|e| e.to_string())?;
 
+    render_frame_scene_sdl2(scene, &mut canvas, &mut texture, width, height)?;
+
+    'mainloop: loop {
+        for event in sdl_context.event_pump()?.poll_iter() {
+            let mut render = false;
+            match event {
+                Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                }
+                | Event::Quit { .. } => break 'mainloop,
+                Event::KeyDown {
+                    keycode: Some(Keycode::M),
+                    ..
+                } => {
+                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
+                    last_object.translate(&Vector3 {
+                        x: 0f64,
+                        y: 0f64,
+                        z: -5f64,
+                    });
+                    render = true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::P),
+                    ..
+                } => {
+                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
+                    last_object.translate(&Vector3 {
+                        x: 0f64,
+                        y: 0f64,
+                        z: 5f64,
+                    });
+                    render = true;
+                }
+                _ => {}
+            }
+            if render {
+                render_frame_scene_sdl2(scene, &mut canvas, &mut texture, width, height)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub fn render_frame_scene_sdl2(
+    scene: &Scene,
+    canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
+    texture: &mut sdl2::render::Texture,
+    width: u32,
+    height: u32,
+) -> Result<(), String> {
     canvas
-        .with_texture_canvas(&mut texture, |texture_canvas| {
+        .with_texture_canvas(texture, |texture_canvas| {
             texture_canvas.clear();
             for y in 0..scene.camera.y_resolution {
                 for x in 0..scene.camera.x_resolution {
@@ -328,19 +381,6 @@ pub fn render_scene_sdl2(scene: Scene) -> Result<(), String> {
         Some(sdl2::rect::Rect::new(0, 0, width, height)),
     )?;
     canvas.present();
-
-    'mainloop: loop {
-        for event in sdl_context.event_pump()?.poll_iter() {
-            match event {
-                Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                }
-                | Event::Quit { .. } => break 'mainloop,
-                _ => {}
-            }
-        }
-    }
 
     Ok(())
 }

@@ -40,6 +40,13 @@ impl Object {
             Object::Plane(ref obj) => obj.normal,
         }
     }
+
+    pub fn translate(&mut self, vector: &Vector3) {
+        match *self {
+            Object::Sphere(ref mut obj) => obj.center = obj.center.add(vector),
+            Object::Plane(ref mut obj) => obj.point = obj.point.add(vector),
+        }
+    }
 }
 
 #[derive(Debug)]
