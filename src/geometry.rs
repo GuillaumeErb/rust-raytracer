@@ -9,8 +9,8 @@ impl Point {
     pub fn add(&self, vector: &Vector3) -> Point {
         Point {
             x: self.x + vector.x,
-            y: self.y - vector.y,
-            z: self.z - vector.z,
+            y: self.y + vector.y,
+            z: self.z + vector.z,
         }
     }
 }
@@ -93,12 +93,36 @@ impl Vector3 {
         }
     }
 
+    pub fn plus(&self, other: &Vector3) -> Vector3 {
+        Vector3 {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        }
+    }
+
+    pub fn minus(&self, other: &Vector3) -> Vector3 {
+        Vector3 {
+            x: self.x - other.x,
+            y: self.y - other.y,
+            z: self.z - other.z,
+        }
+    }
+
     pub fn normalize(&self) -> Vector3 {
         let normalization = 1f64 / (self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
         Vector3 {
             x: self.x * normalization,
             y: self.y * normalization,
             z: self.z * normalization,
+        }
+    }
+
+    pub fn cross(&self, other: Vector3) -> Vector3 {
+        Vector3 {
+            x: self.y * other.z - self.z * other.y,
+            y: self.z * other.x - self.x * other.z,
+            z: self.x * other.y - self.y * other.x,
         }
     }
 }

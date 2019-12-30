@@ -2,8 +2,10 @@ mod camera;
 mod geometry;
 mod intersectable;
 
+use camera::Camera;
 use camera::GeneratingViewRays;
 use camera::OrthographicCamera;
+use camera::StandardCamera;
 use geometry::Object;
 use geometry::Plane;
 use geometry::Point;
@@ -15,6 +17,7 @@ use rayon::prelude::*;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::collections::HashMap;
+use std::f64::consts::PI;
 
 fn main() -> Result<(), String> {
     let mut objects: Vec<ObjectWithMaterial> = vec![];
@@ -23,9 +26,9 @@ fn main() -> Result<(), String> {
             center: Point {
                 x: 0f64,
                 y: 0f64,
-                z: -70f64,
+                z: 0f64,
             },
-            radius: 200f64,
+            radius: 5f64,
         }),
         material: Material::LambertMaterial(LambertMaterial {
             color: Color {
@@ -38,11 +41,11 @@ fn main() -> Result<(), String> {
     objects.push(ObjectWithMaterial {
         geometry: Object::Sphere(Sphere {
             center: Point {
-                x: 40f64,
-                y: 20f64,
-                z: -10f64,
+                x: -5f64,
+                y: 0f64,
+                z: -2f64,
             },
-            radius: 150f64,
+            radius: 2f64,
         }),
         material: Material::LambertMaterial(LambertMaterial {
             color: Color {
@@ -52,6 +55,7 @@ fn main() -> Result<(), String> {
             },
         }),
     });
+    /*
     objects.push(ObjectWithMaterial {
         geometry: Object::Sphere(Sphere {
             center: Point {
@@ -68,15 +72,16 @@ fn main() -> Result<(), String> {
                 blue: 1f64,
             },
         }),
-    });
+    });*/
     let mut lights: Vec<Light> = vec![];
     lights.push(Light::DirectionalLight(DirectionalLight {
         direction: Vector3 {
-            x: -1f64,
+            x: 1f64,
             y: 0f64,
             z: 0f64,
         }
         .normalize(),
+        intensity: 1f64,
     }));
     /*lights.push(Light::DirectionalLight(DirectionalLight {
         direction: Vector3 {
@@ -86,13 +91,58 @@ fn main() -> Result<(), String> {
         }
         .normalize(),
     }));*/
+
+    let orthoCamera = Camera::OrthographicCamera(OrthographicCamera {
+        x_resolution: 800u16,
+        y_resolution: 1000u16,
+    });
+
+    let standard_camera = Camera::StandardCamera(StandardCamera {
+        position: Point {
+            x: 0f64,
+            y: 0f64,
+            z: -20f64,
+        },
+        direction: Vector3 {
+            x: 0f64,
+            y: 0f64,
+            z: 1f64,
+        },
+        up_direction: Vector3 {
+            x: 0f64,
+            y: 1f64,
+            z: 0f64,
+        },
+        field_of_view: PI / 2f64,
+        x_resolution: 300u16,
+        y_resolution: 200u16,
+    });
+    /*
+        let standard_camera = Camera::StandardCamera(StandardCamera {
+            position: Point {
+                x: -3f64,
+                y: 0f64,
+                z: -10f64,
+            },
+            direction: Vector3 {
+                x: 0f64,
+                y: 0f64,
+                z: 1f64,
+            },
+            up_direction: Vector3 {
+                x: 0f64,
+                y: 1f64,
+                z: 0f64,
+            },
+            field_of_view: PI / 10f64,
+            x_resolution: 2u16,
+            y_resolution: 2u16,
+        });
+    */
     let mut scene = Scene {
         objects: objects,
         lights: lights,
-        camera: OrthographicCamera {
-            x_resolution: 1000u16,
-            y_resolution: 800u16,
-        },
+        camera: standard_camera,
     };
 
     //render_scene(scene);
@@ -133,10 +183,12 @@ impl LambertMaterial {
         let normal = intersection.object.geometry.get_normal(&point);
         let mut diffuse_lights = 0f64;
         for light in &scene.lights {
+            //println!("Is is shadow ... ?");
             if is_in_shadow(&point, &light, scene) {
                 continue;
             }
-            diffuse_lights += normal.dot(&light.get_direction().times(-1f64)).max(0f64);
+            diffuse_lights +=
+                normal.dot(&light.get_direction().times(-1f64)).max(0f64) * &light.get_intensity();
         }
         self.color.times(diffuse_lights /*.powi(5)*5f64*/)
     }
@@ -200,6 +252,12 @@ impl Light {
             Light::DirectionalLight(ref light) => light.direction,
         }
     }
+
+    pub fn get_intensity(&self) -> f64 {
+        match *self {
+            Light::DirectionalLight(ref light) => light.intensity,
+        }
+    }
 }
 
 pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
@@ -219,6 +277,7 @@ pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
 #[derive(Debug)]
 pub struct DirectionalLight {
     direction: Vector3,
+    intensity: f64,
 }
 
 struct ObjectWithMaterial {
@@ -235,7 +294,7 @@ pub const BLACK: Color = Color {
 pub struct Scene {
     objects: Vec<ObjectWithMaterial>,
     lights: Vec<Light>,
-    camera: OrthographicCamera,
+    camera: Camera,
 }
 
 pub fn render_scene_console(scene: Scene) {
@@ -245,8 +304,8 @@ pub fn render_scene_console(scene: Scene) {
         .map(|view_ray| ((view_ray.x, view_ray.y), cast_ray(&scene, &view_ray.ray)))
         .collect();
 
-    for y in 0..scene.camera.y_resolution {
-        for x in 0..scene.camera.x_resolution {
+    for x in 0..scene.camera.x_resolution() {
+        for y in 0..scene.camera.y_resolution() {
             let ansi_color: ansi_term::Color = screen[&(x, y)].into();
             print!("{}", ansi_color.paint("█"));
         }
@@ -262,8 +321,8 @@ pub fn render_scene(scene: Scene) {
         .collect();
 
     let mut imgbuf: image::RgbImage = image::ImageBuffer::new(
-        scene.camera.x_resolution as u32,
-        scene.camera.y_resolution as u32,
+        scene.camera.x_resolution() as u32,
+        scene.camera.y_resolution() as u32,
     );
 
     for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
@@ -276,8 +335,8 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let width: u32 = scene.camera.x_resolution.into();
-    let height: u32 = scene.camera.y_resolution.into();
+    let width: u32 = scene.camera.x_resolution().into();
+    let height: u32 = scene.camera.y_resolution().into();
 
     let window = video_subsystem
         .window("rust raytracer", width, height)
@@ -313,7 +372,7 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
                     last_object.translate(&Vector3 {
                         x: 0f64,
                         y: 0f64,
-                        z: -5f64,
+                        z: -1f64,
                     });
                     render = true;
                 }
@@ -325,7 +384,55 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
                     last_object.translate(&Vector3 {
                         x: 0f64,
                         y: 0f64,
-                        z: 5f64,
+                        z: 1f64,
+                    });
+                    render = true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Left),
+                    ..
+                } => {
+                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
+                    last_object.translate(&Vector3 {
+                        x: -1f64,
+                        y: 0f64,
+                        z: 0f64,
+                    });
+                    render = true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Right),
+                    ..
+                } => {
+                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
+                    last_object.translate(&Vector3 {
+                        x: 1f64,
+                        y: 0f64,
+                        z: 0f64,
+                    });
+                    render = true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Up),
+                    ..
+                } => {
+                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
+                    last_object.translate(&Vector3 {
+                        x: 0f64,
+                        y: 1f64,
+                        z: 0f64,
+                    });
+                    render = true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Down),
+                    ..
+                } => {
+                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
+                    last_object.translate(&Vector3 {
+                        x: 0f64,
+                        y: -1f64,
+                        z: 0f64,
                     });
                     render = true;
                 }
@@ -349,14 +456,14 @@ pub fn render_frame_scene_sdl2(
 ) -> Result<(), String> {
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
-        .par_iter()
+        .iter()
         .map(|view_ray| ((view_ray.x, view_ray.y), cast_ray(&scene, &view_ray.ray)))
         .collect();
     canvas
         .with_texture_canvas(texture, |texture_canvas| {
             texture_canvas.clear();
-            for y in 0..scene.camera.y_resolution {
-                for x in 0..scene.camera.x_resolution {
+            for x in 0..scene.camera.x_resolution() {
+                for y in 0..scene.camera.y_resolution() {
                     let sdl2_color: sdl2::pixels::Color = screen[&(x, y)].into();
                     texture_canvas.set_draw_color(sdl2_color);
                     texture_canvas
@@ -428,10 +535,10 @@ mod tests {
         let scene = Scene {
             objects: objects,
             lights: vec![],
-            camera: OrthographicCamera {
-                x_resolution: 50u16,
-                y_resolution: 25u16,
-            },
+            camera: Camera::OrthographicCamera(OrthographicCamera {
+                x_resolution: 25u16,
+                y_resolution: 50u16,
+            }),
         };
         let ray = Ray {
             origin: Point {
@@ -484,14 +591,15 @@ mod tests {
                 z: -1f64,
             }
             .normalize(),
+            intensity: 1f64,
         }));
         let scene = Scene {
             objects: objects,
             lights: lights,
-            camera: OrthographicCamera {
-                x_resolution: 50u16,
-                y_resolution: 25u16,
-            },
+            camera: Camera::OrthographicCamera(OrthographicCamera {
+                x_resolution: 25u16,
+                y_resolution: 50u16,
+            }),
         };
         let ray = Ray {
             origin: Point {
@@ -557,10 +665,10 @@ mod tests {
         let scene = Scene {
             objects: objects,
             lights: vec![],
-            camera: OrthographicCamera {
-                x_resolution: 50u16,
-                y_resolution: 25u16,
-            },
+            camera: Camera::OrthographicCamera(OrthographicCamera {
+                x_resolution: 25u16,
+                y_resolution: 50u16,
+            }),
         };
         let ray = Ray {
             origin: Point {
@@ -612,10 +720,10 @@ mod tests {
         let scene = Scene {
             objects: objects,
             lights: vec![],
-            camera: OrthographicCamera {
-                x_resolution: 50u16,
-                y_resolution: 25u16,
-            },
+            camera: Camera::OrthographicCamera(OrthographicCamera {
+                x_resolution: 25u16,
+                y_resolution: 50u16,
+            }),
         };
         let ray = Ray {
             origin: Point {
