@@ -1,16 +1,15 @@
 use crate::is_in_shadow;
 use crate::Color;
 use crate::Intersection;
-use crate::LambertMaterial;
 use crate::Ray;
 use crate::Scene;
-use crate::BLACK;
 use crate::PI;
 
 #[derive(Debug)]
 pub enum Material {
     ConstantMaterial(ConstantMaterial),
     LambertMaterial(LambertMaterial),
+    PhongMaterial(PhongMaterial),
 }
 
 #[derive(Debug)]
@@ -19,12 +18,20 @@ pub struct ConstantMaterial {
 }
 
 #[derive(Debug)]
+pub struct LambertMaterial {
+    pub color: Color,
+    pub albedo: f64, // between 0 and 1
+}
+
+#[derive(Debug)]
 pub struct PhongMaterial {
-    color: Color,
-    specular_reflection: f64,
-    diffuse_reflection: f64,
-    ambient_reflection: f64,
-    shininess: f64,
+    pub ambient_color: Color,
+    pub ambient_reflection: f64,
+    pub diffuse_color: Color,
+    pub diffuse_reflection: f64,
+    pub specular_color: Color,
+    pub specular_reflection: f64,
+    pub shininess: f64,
 }
 
 impl Material {
@@ -33,21 +40,47 @@ impl Material {
         let normal = intersection.object.geometry.get_normal(&point_precise);
         let point = point_precise.add(&normal.times(1e-6));
 
-        let mut rendered_color = BLACK;
+        let mut rendered_color = &(&scene.ambient_light.color * &self.get_ambient_color())
+            * scene.ambient_light.intensity;
         for light in &scene.lights {
             if is_in_shadow(&point, &light, scene) {
                 continue;
             }
             match *self {
-                Material::ConstantMaterial(ref m) => rendered_color = &rendered_color + &m.color,
+                Material::ConstantMaterial(ref m) => {
+                    rendered_color = &rendered_color + &(&light.get_color() * &m.color)
+                }
                 Material::LambertMaterial(ref m) => {
                     let mut ratio = normal.dot(&light.get_direction().times(-1f64)).max(0f64);
                     ratio = ratio * (m.albedo / PI);
                     ratio = ratio * light.get_intensity();
                     rendered_color = &rendered_color + &(ratio * &(&light.get_color() * &m.color));
                 }
+                Material::PhongMaterial(ref m) => {
+                    let to_light = &light.get_direction().times(-1f64);
+                    let to_eye = ray.direction.times(-1f64);
+                    let light_normal_reflection = &to_light.symmetry(&normal);
+                    let diffuse = m.diffuse_reflection * normal.dot(to_light).max(0f64);
+                    let specular = m.specular_reflection
+                        * (&light_normal_reflection.dot(&to_eye).max(0f64)).powf(m.shininess);
+
+                    rendered_color = &rendered_color
+                        + &(diffuse
+                            * &(&(&light.get_color() * light.get_intensity()) * &m.diffuse_color));
+                    rendered_color = &rendered_color
+                        + &(specular
+                            * &(&(&light.get_color() * light.get_intensity()) * &m.specular_color));
+                }
             }
         }
         rendered_color
+    }
+
+    pub fn get_ambient_color(&self) -> Color {
+        match *self {
+            Material::ConstantMaterial(ref m) => m.color,
+            Material::LambertMaterial(ref m) => m.color,
+            Material::PhongMaterial(ref m) => &m.ambient_color * m.ambient_reflection,
+        }
     }
 }

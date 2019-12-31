@@ -18,9 +18,12 @@ use geometry::Ray;
 use geometry::Sphere;
 use geometry::Vector3;
 use intersectable::Intersectable;
+use light::AmbientLight;
 use light::DirectionalLight;
 use light::Light;
+use material::LambertMaterial;
 use material::Material;
+use material::PhongMaterial;
 use rayon::prelude::*;
 use renderer::render_scene_sdl2;
 
@@ -37,13 +40,26 @@ fn main() -> Result<(), String> {
             },
             radius: 5f64,
         }),
-        material: Material::LambertMaterial(LambertMaterial {
-            color: Color {
+        material: Material::PhongMaterial(PhongMaterial {
+            ambient_color: Color {
                 red: 0.1f64,
                 green: 1f64,
                 blue: 0.1f64,
             },
-            albedo: 1f64,
+            ambient_reflection: 1f64,
+            diffuse_color: Color {
+                red: 0.1f64,
+                green: 0.8f64,
+                blue: 0.1f64,
+            },
+            diffuse_reflection: 0.5f64,
+            specular_color: Color {
+                red: 1f64,
+                green: 1f64,
+                blue: 1f64,
+            },
+            specular_reflection: 0.4f64,
+            shininess: 40f64,
         }),
     });
     objects.push(ObjectWithMaterial {
@@ -111,13 +127,22 @@ fn main() -> Result<(), String> {
             z: 1f64,
         }
         .normalize(),
-        intensity: 1f64,
+        intensity: 2f64,
         color: Color {
             red: 0.2f64,
             green: 0.5f64,
             blue: 1f64,
         },
     }));
+
+    let ambient_light = AmbientLight {
+        color: Color {
+            red: 1f64,
+            green: 1f64,
+            blue: 1f64,
+        },
+        intensity: 0.1f64,
+    };
 
     let standard_camera = Camera::StandardCamera(StandardCamera {
         position: Point {
@@ -143,39 +168,13 @@ fn main() -> Result<(), String> {
     let mut scene = Scene {
         objects: objects,
         lights: lights,
+        ambient_light: ambient_light,
         camera: standard_camera,
     };
 
     render_scene_sdl2(&mut scene)?;
 
     Ok(())
-}
-
-#[derive(Debug)]
-pub struct LambertMaterial {
-    color: Color,
-    albedo: f64, // between 0 and 1
-}
-
-impl LambertMaterial {
-    pub fn render_color(&self, ray: &Ray, intersection: &Intersection, scene: &Scene) -> Color {
-        let point_precise = ray.origin.add(&ray.direction.times(intersection.distance));
-        let normal = intersection.object.geometry.get_normal(&point_precise);
-        let point = point_precise.add(&normal.times(1e-6));
-
-        let mut diffuse_lights = BLACK;
-        for light in &scene.lights {
-            //println!("Is is shadow ... ?");
-            if is_in_shadow(&point, &light, scene) {
-                continue;
-            }
-            diffuse_lights = &diffuse_lights
-                + &(normal.dot(&light.get_direction().times(-1f64)).max(0f64) * self.albedo / PI
-                    * &light.get_intensity()
-                    * &light.get_color());
-        }
-        &self.color * &(diffuse_lights/*.powi(5)*5f64*/)
-    }
 }
 
 pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
@@ -199,6 +198,7 @@ struct ObjectWithMaterial {
 
 pub struct Scene {
     objects: Vec<ObjectWithMaterial>,
+    ambient_light: AmbientLight,
     lights: Vec<Light>,
     camera: Camera,
 }
@@ -211,7 +211,7 @@ pub struct Intersection<'a> {
 pub fn cast_ray(scene: &Scene, ray: &Ray) -> Color {
     let intersection = scene
         .objects
-        .iter()
+        .par_iter()
         .filter_map(|object| {
             object.geometry.intersect(ray).map(|distance| Intersection {
                 distance: distance,
@@ -255,6 +255,10 @@ mod tests {
         let scene = Scene {
             objects: objects,
             lights: vec![],
+            ambient_light: AmbientLight {
+                color: BLACK,
+                intensity: 0f64,
+            },
             camera: Camera::OrthographicCamera(OrthographicCamera {
                 x_resolution: 25u16,
                 y_resolution: 50u16,
@@ -322,6 +326,10 @@ mod tests {
         let scene = Scene {
             objects: objects,
             lights: lights,
+            ambient_light: AmbientLight {
+                color: BLACK,
+                intensity: 0f64,
+            },
             camera: Camera::OrthographicCamera(OrthographicCamera {
                 x_resolution: 25u16,
                 y_resolution: 50u16,
@@ -391,6 +399,10 @@ mod tests {
         let scene = Scene {
             objects: objects,
             lights: vec![],
+            ambient_light: AmbientLight {
+                color: BLACK,
+                intensity: 0f64,
+            },
             camera: Camera::OrthographicCamera(OrthographicCamera {
                 x_resolution: 25u16,
                 y_resolution: 50u16,
@@ -446,6 +458,10 @@ mod tests {
         let scene = Scene {
             objects: objects,
             lights: vec![],
+            ambient_light: AmbientLight {
+                color: BLACK,
+                intensity: 0f64,
+            },
             camera: Camera::OrthographicCamera(OrthographicCamera {
                 x_resolution: 25u16,
                 y_resolution: 50u16,

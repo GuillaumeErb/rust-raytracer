@@ -13,6 +13,11 @@ pub struct DirectionalLight {
     pub color: Color,
 }
 
+pub struct AmbientLight {
+    pub color: Color,
+    pub intensity: f64,
+}
+
 impl Light {
     pub fn get_direction(&self) -> Vector3 {
         match *self {

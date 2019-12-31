@@ -125,4 +125,8 @@ impl Vector3 {
             z: self.x * other.y - self.y * other.x,
         }
     }
+
+    pub fn symmetry(&self, reference: &Vector3) -> Vector3 {
+        reference.times(2f64*self.dot(reference)).plus(&(self.times(-1f64)))
+    }
 }
