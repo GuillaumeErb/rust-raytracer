@@ -6,6 +6,7 @@ use camera::Camera;
 use camera::GeneratingViewRays;
 use camera::OrthographicCamera;
 use camera::StandardCamera;
+use core::ops;
 use geometry::Object;
 use geometry::Plane;
 use geometry::Point;
@@ -36,6 +37,7 @@ fn main() -> Result<(), String> {
                 green: 1f64,
                 blue: 0f64,
             },
+            albedo: 1f64,
         }),
     });
     objects.push(ObjectWithMaterial {
@@ -53,6 +55,7 @@ fn main() -> Result<(), String> {
                 green: 0f64,
                 blue: 0f64,
             },
+            albedo: 1f64,
         }),
     });
     /*
@@ -81,7 +84,12 @@ fn main() -> Result<(), String> {
             z: 0f64,
         }
         .normalize(),
-        intensity: 1f64,
+        intensity: 2f64,
+        color: Color {
+            red: 1f64,
+            green: 1f64,
+            blue: 1f64,
+        },
     }));
     /*lights.push(Light::DirectionalLight(DirectionalLight {
         direction: Vector3 {
@@ -114,8 +122,8 @@ fn main() -> Result<(), String> {
             z: 0f64,
         },
         field_of_view: PI / 2f64,
-        x_resolution: 300u16,
-        y_resolution: 200u16,
+        x_resolution: 600u16,
+        y_resolution: 400u16,
     });
     /*
         let standard_camera = Camera::StandardCamera(StandardCamera {
@@ -175,22 +183,25 @@ pub struct ConstantMaterial {
 #[derive(Debug)]
 pub struct LambertMaterial {
     color: Color,
+    albedo: f64, // between 0 and 1
 }
 
 impl LambertMaterial {
     pub fn render_color(&self, ray: &Ray, intersection: &Intersection, scene: &Scene) -> Color {
         let point = ray.origin.add(&ray.direction.times(intersection.distance));
         let normal = intersection.object.geometry.get_normal(&point);
-        let mut diffuse_lights = 0f64;
+        let mut diffuse_lights = BLACK;
         for light in &scene.lights {
             //println!("Is is shadow ... ?");
             if is_in_shadow(&point, &light, scene) {
                 continue;
             }
-            diffuse_lights +=
-                normal.dot(&light.get_direction().times(-1f64)).max(0f64) * &light.get_intensity();
+            diffuse_lights = &diffuse_lights
+                + &(normal.dot(&light.get_direction().times(-1f64)).max(0f64) * self.albedo / PI
+                    * &light.get_intensity()
+                    * &light.get_color());
         }
-        self.color.times(diffuse_lights /*.powi(5)*5f64*/)
+        &self.color * &(diffuse_lights/*.powi(5)*5f64*/)
     }
 }
 
@@ -201,12 +212,46 @@ pub struct Color {
     blue: f64,
 }
 
-impl Color {
-    pub fn times(&self, scalar: f64) -> Color {
+impl ops::Mul<f64> for &Color {
+    type Output = Color;
+
+    fn mul(self, scalar: f64) -> Color {
         Color {
             red: (self.red * scalar).min(1f64).max(0f64),
             green: (self.green * scalar).min(1f64).max(0f64),
             blue: (self.blue * scalar).min(1f64).max(0f64),
+        }
+    }
+}
+
+impl ops::Mul<&Color> for f64 {
+    type Output = Color;
+
+    fn mul(self, color: &Color) -> Color {
+        color * self
+    }
+}
+
+impl ops::Mul<&Color> for &Color {
+    type Output = Color;
+
+    fn mul(self, other: &Color) -> Color {
+        Color {
+            red: (self.red * other.red).min(1f64).max(0f64),
+            green: (self.green * other.green).min(1f64).max(0f64),
+            blue: (self.blue * other.blue).min(1f64).max(0f64),
+        }
+    }
+}
+
+impl ops::Add<&Color> for &Color {
+    type Output = Color;
+
+    fn add(self, other: &Color) -> Color {
+        Color {
+            red: (self.red + other.red).min(1f64).max(0f64),
+            green: (self.green + other.green).min(1f64).max(0f64),
+            blue: (self.blue + other.blue).min(1f64).max(0f64),
         }
     }
 }
@@ -258,6 +303,12 @@ impl Light {
             Light::DirectionalLight(ref light) => light.intensity,
         }
     }
+
+    pub fn get_color(&self) -> Color {
+        match *self {
+            Light::DirectionalLight(ref light) => light.color,
+        }
+    }
 }
 
 pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
@@ -269,7 +320,7 @@ pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
 
     scene
         .objects
-        .iter()
+        .par_iter()
         .filter_map(|object| object.geometry.intersect(&shadow_ray))
         .any(|_d| true)
 }
@@ -278,6 +329,7 @@ pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
 pub struct DirectionalLight {
     direction: Vector3,
     intensity: f64,
+    color: Color,
 }
 
 struct ObjectWithMaterial {
@@ -456,7 +508,7 @@ pub fn render_frame_scene_sdl2(
 ) -> Result<(), String> {
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
-        .iter()
+        .par_iter()
         .map(|view_ray| ((view_ray.x, view_ray.y), cast_ray(&scene, &view_ray.ray)))
         .collect();
     canvas
@@ -581,6 +633,7 @@ mod tests {
                     green: 1f64,
                     blue: 0f64,
                 },
+                albedo: 1f64,
             }),
         });
         let mut lights: Vec<Light> = vec![];
@@ -592,6 +645,11 @@ mod tests {
             }
             .normalize(),
             intensity: 1f64,
+            color: Color {
+                red: 1f64,
+                green: 1f64,
+                blue: 1f64,
+            },
         }));
         let scene = Scene {
             objects: objects,
