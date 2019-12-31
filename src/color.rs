@@ -7,6 +7,12 @@ pub struct Color {
     pub blue: f64,
 }
 
+pub const BLACK: Color = Color {
+    red: 0f64,
+    green: 0f64,
+    blue: 0f64,
+};
+
 impl ops::Mul<f64> for &Color {
     type Output = Color;
 

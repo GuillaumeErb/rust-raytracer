@@ -8,9 +8,9 @@ mod renderer;
 
 use camera::Camera;
 use camera::GeneratingViewRays;
-use camera::OrthographicCamera;
 use camera::StandardCamera;
 use color::Color;
+use color::BLACK;
 use geometry::Object;
 use geometry::Plane;
 use geometry::Point;
@@ -39,9 +39,9 @@ fn main() -> Result<(), String> {
         }),
         material: Material::LambertMaterial(LambertMaterial {
             color: Color {
-                red: 0f64,
+                red: 0.1f64,
                 green: 1f64,
-                blue: 0f64,
+                blue: 0.1f64,
             },
             albedo: 1f64,
         }),
@@ -62,8 +62,8 @@ fn main() -> Result<(), String> {
         }),
         material: Material::LambertMaterial(LambertMaterial {
             color: Color {
-                red: 0f64,
-                green: 0f64,
+                red: 1f64,
+                green: 1f64,
                 blue: 1f64,
             },
             albedo: 1f64,
@@ -81,8 +81,8 @@ fn main() -> Result<(), String> {
         material: Material::LambertMaterial(LambertMaterial {
             color: Color {
                 red: 1f64,
-                green: 0f64,
-                blue: 0f64,
+                green: 0.1f64,
+                blue: 0.1f64,
             },
             albedo: 1f64,
         }),
@@ -96,10 +96,25 @@ fn main() -> Result<(), String> {
             z: 0f64,
         }
         .normalize(),
-        intensity: 2f64,
+        intensity: 1f64,
         color: Color {
             red: 1f64,
             green: 1f64,
+            blue: 1f64,
+        },
+    }));
+
+    lights.push(Light::DirectionalLight(DirectionalLight {
+        direction: Vector3 {
+            x: 4f64,
+            y: 2f64,
+            z: 1f64,
+        }
+        .normalize(),
+        intensity: 1f64,
+        color: Color {
+            red: 0.2f64,
+            green: 0.5f64,
             blue: 1f64,
         },
     }));
@@ -182,12 +197,6 @@ struct ObjectWithMaterial {
     material: Material,
 }
 
-pub const BLACK: Color = Color {
-    red: 0f64,
-    green: 0f64,
-    blue: 0f64,
-};
-
 pub struct Scene {
     objects: Vec<ObjectWithMaterial>,
     lights: Vec<Light>,
@@ -220,6 +229,7 @@ pub fn cast_ray(scene: &Scene, ray: &Ray) -> Color {
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
+    use camera::OrthographicCamera;
     use material::ConstantMaterial;
 
     #[test]

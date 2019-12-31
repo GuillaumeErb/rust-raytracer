@@ -8,6 +8,7 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::collections::HashMap;
 
+#[allow(unused)]
 pub fn render_scene_console(scene: Scene) {
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
@@ -34,6 +35,7 @@ impl From<Color> for ansi_term::Color {
     }
 }
 
+#[allow(unused)]
 pub fn render_scene_file(scene: Scene) {
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
