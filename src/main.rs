@@ -47,6 +47,29 @@ fn main() -> Result<(), String> {
         }),
     });
     objects.push(ObjectWithMaterial {
+        geometry: Object::Plane(Plane {
+            point: Point {
+                x: 5f64,
+                y: 0f64,
+                z: 0f64,
+            },
+            normal: Vector3 {
+                x: -1f64,
+                y: 0f64,
+                z: -0.5f64,
+            }
+            .normalize(),
+        }),
+        material: Material::LambertMaterial(LambertMaterial {
+            color: Color {
+                red: 0f64,
+                green: 0f64,
+                blue: 1f64,
+            },
+            albedo: 1f64,
+        }),
+    });
+    objects.push(ObjectWithMaterial {
         geometry: Object::Sphere(Sphere {
             center: Point {
                 x: -5f64,
@@ -64,24 +87,7 @@ fn main() -> Result<(), String> {
             albedo: 1f64,
         }),
     });
-    /*
-    objects.push(ObjectWithMaterial {
-        geometry: Object::Sphere(Sphere {
-            center: Point {
-                x: 350f64,
-                y: 0f64,
-                z: -70f64,
-            },
-            radius: 50f64,
-        }),
-        material: Material::LambertMaterial(LambertMaterial {
-            color: Color {
-                red: 0f64,
-                green: 0f64,
-                blue: 1f64,
-            },
-        }),
-    });*/
+
     let mut lights: Vec<Light> = vec![];
     lights.push(Light::DirectionalLight(DirectionalLight {
         direction: Vector3 {
@@ -97,19 +103,6 @@ fn main() -> Result<(), String> {
             blue: 1f64,
         },
     }));
-    /*lights.push(Light::DirectionalLight(DirectionalLight {
-        direction: Vector3 {
-            x: 0f64,
-            y: 0f64,
-            z: 1f64,
-        }
-        .normalize(),
-    }));*/
-
-    let orthoCamera = Camera::OrthographicCamera(OrthographicCamera {
-        x_resolution: 800u16,
-        y_resolution: 1000u16,
-    });
 
     let standard_camera = Camera::StandardCamera(StandardCamera {
         position: Point {
@@ -131,35 +124,12 @@ fn main() -> Result<(), String> {
         x_resolution: 600u16,
         y_resolution: 400u16,
     });
-    /*
-        let standard_camera = Camera::StandardCamera(StandardCamera {
-            position: Point {
-                x: -3f64,
-                y: 0f64,
-                z: -10f64,
-            },
-            direction: Vector3 {
-                x: 0f64,
-                y: 0f64,
-                z: 1f64,
-            },
-            up_direction: Vector3 {
-                x: 0f64,
-                y: 1f64,
-                z: 0f64,
-            },
-            field_of_view: PI / 10f64,
-            x_resolution: 2u16,
-            y_resolution: 2u16,
-        });
-    */
+
     let mut scene = Scene {
         objects: objects,
         lights: lights,
         camera: standard_camera,
     };
-
-    //render_scene(scene);
 
     render_scene_sdl2(&mut scene)?;
 
@@ -174,8 +144,10 @@ pub struct LambertMaterial {
 
 impl LambertMaterial {
     pub fn render_color(&self, ray: &Ray, intersection: &Intersection, scene: &Scene) -> Color {
-        let point = ray.origin.add(&ray.direction.times(intersection.distance));
-        let normal = intersection.object.geometry.get_normal(&point);
+        let point_precise = ray.origin.add(&ray.direction.times(intersection.distance));
+        let normal = intersection.object.geometry.get_normal(&point_precise);
+        let point = point_precise.add(&normal.times(1e-6));
+
         let mut diffuse_lights = BLACK;
         for light in &scene.lights {
             //println!("Is is shadow ... ?");
