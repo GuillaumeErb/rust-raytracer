@@ -59,13 +59,13 @@ impl Material {
                     rendered_color = &rendered_color + &(&light.get_color() * &m.color)
                 }
                 Material::LambertMaterial(ref m) => {
-                    let mut ratio = normal.dot(&light.get_direction().times(-1f64)).max(0f64);
+                    let mut ratio = normal.dot(&light.get_direction(&point).times(-1f64)).max(0f64);
                     ratio = ratio * (m.albedo / PI);
                     ratio = ratio * light.get_intensity();
                     rendered_color = &rendered_color + &(ratio * &(&light.get_color() * &m.color));
                 }
                 Material::PhongMaterial(ref m) => {
-                    let to_light = &light.get_direction().times(-1f64);
+                    let to_light = &light.get_direction(&point).times(-1f64);
                     let to_eye = ray.direction.times(-1f64);
                     let light_normal_reflection = to_light.symmetry(&normal);
                     let diffuse = m.diffuse_reflection * normal.dot(to_light).max(0f64);

@@ -21,6 +21,7 @@ use intersectable::Intersectable;
 use light::AmbientLight;
 use light::DirectionalLight;
 use light::Light;
+use light::PointLight;
 use material::LambertMaterial;
 use material::Material;
 use material::PhongMaterial;
@@ -122,13 +123,12 @@ fn main() -> Result<(), String> {
     });
 
     let mut lights: Vec<Light> = vec![];
-    lights.push(Light::DirectionalLight(DirectionalLight {
-        direction: Vector3 {
-            x: 1f64,
+    lights.push(Light::PointLight(PointLight {
+        origin: Point {
+            x: 100f64,
             y: 0f64,
             z: 0f64,
-        }
-        .normalize(),
+        },
         intensity: 1f64,
         color: Color {
             red: 1f64,
@@ -195,7 +195,7 @@ fn main() -> Result<(), String> {
 }
 
 pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
-    let light_direction = light.get_direction();
+    let light_direction = light.get_direction(point);
     let shadow_ray = Ray {
         origin: *point,
         direction: light_direction.times(-1f64),
