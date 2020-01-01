@@ -86,8 +86,8 @@ impl GeneratingViewRays for StandardCamera {
         let mut view_rays: Vec<ViewRay> = vec![];
 
         let t_n = self.direction.normalize();
-        let b_n = self.direction.cross(self.up_direction).normalize();
-        let v_n = t_n.cross(b_n);
+        let b_n = self.direction.cross(&self.up_direction).normalize();
+        let v_n = t_n.cross(&b_n);
         let g_x = (self.field_of_view / 2f64).tan();
         let g_y = g_x * (self.y_resolution as f64) / (self.x_resolution as f64);
         let q_x = b_n.times(2f64 * g_x / (self.x_resolution as f64));

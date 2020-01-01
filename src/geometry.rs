@@ -118,7 +118,7 @@ impl Vector3 {
         }
     }
 
-    pub fn cross(&self, other: Vector3) -> Vector3 {
+    pub fn cross(&self, other: &Vector3) -> Vector3 {
         Vector3 {
             x: self.y * other.z - self.z * other.y,
             y: self.z * other.x - self.x * other.z,
@@ -127,6 +127,8 @@ impl Vector3 {
     }
 
     pub fn symmetry(&self, reference: &Vector3) -> Vector3 {
-        reference.times(2f64*self.dot(reference)).plus(&(self.times(-1f64)))
+        reference
+            .times(2f64 * self.dot(reference))
+            .plus(&(self.times(-1f64)))
     }
 }
