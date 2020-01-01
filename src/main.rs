@@ -8,7 +8,6 @@ mod renderer;
 
 use camera::Camera;
 use camera::GeneratingViewRays;
-use camera::StandardCamera;
 use color::Color;
 use color::BLACK;
 use geometry::Object;
@@ -22,9 +21,7 @@ use light::AmbientLight;
 use light::DirectionalLight;
 use light::Light;
 use light::PointLight;
-use material::LambertMaterial;
 use material::Material;
-use material::PhongMaterial;
 use rayon::prelude::*;
 use renderer::render_scene_sdl2;
 
@@ -43,7 +40,7 @@ fn main() -> Result<(), String> {
             },
             radius: 5f64,
         }),
-        material: Material::PhongMaterial(PhongMaterial {
+        material: Material {
             ambient_color: Color {
                 red: 0.1f64,
                 green: 1f64,
@@ -64,7 +61,7 @@ fn main() -> Result<(), String> {
             specular_reflection: 0.4f64,
             shininess: 40f64,
             reflectivity: 0.3f64,
-        }),
+        },
     });
     objects.push(ObjectWithMaterial {
         geometry: Object::Plane(Plane {
@@ -80,7 +77,7 @@ fn main() -> Result<(), String> {
             }
             .normalize(),
         }),
-        material: Material::PhongMaterial(PhongMaterial {
+        material: Material {
             ambient_color: Color {
                 red: 0.8f64,
                 green: 1f64,
@@ -101,7 +98,7 @@ fn main() -> Result<(), String> {
             specular_reflection: 0f64,
             shininess: 1f64,
             reflectivity: 0.2f64,
-        }),
+        },
     });
     objects.push(ObjectWithMaterial {
         geometry: Object::Sphere(Sphere {
@@ -112,14 +109,20 @@ fn main() -> Result<(), String> {
             },
             radius: 2f64,
         }),
-        material: Material::LambertMaterial(LambertMaterial {
-            color: Color {
+        material: Material {
+            ambient_color: BLACK,
+            ambient_reflection: 0f64,
+            diffuse_color: Color {
                 red: 1f64,
                 green: 0.1f64,
                 blue: 0.1f64,
             },
-            albedo: 1f64,
-        }),
+            diffuse_reflection: 1f64 / PI,
+            specular_color: BLACK,
+            specular_reflection: 0f64,
+            shininess: 1f64,
+            reflectivity: 0f64,
+        },
     });
 
     let mut lights: Vec<Light> = vec![];
@@ -161,7 +164,7 @@ fn main() -> Result<(), String> {
         intensity: 0.1f64,
     };
 
-    let standard_camera = Camera::StandardCamera(StandardCamera {
+    let standard_camera = Camera {
         position: Point {
             x: 0f64,
             y: 0f64,
@@ -180,7 +183,7 @@ fn main() -> Result<(), String> {
         field_of_view: PI / 2f64,
         x_resolution: 600u16,
         y_resolution: 400u16,
-    });
+    };
 
     let mut scene = Scene {
         objects: objects,

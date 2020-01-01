@@ -22,8 +22,8 @@ pub fn render_scene_console(scene: Scene) {
         })
         .collect();
 
-    for x in 0..scene.camera.x_resolution() {
-        for y in 0..scene.camera.y_resolution() {
+    for x in 0..scene.camera.x_resolution {
+        for y in 0..scene.camera.y_resolution {
             let ansi_color: ansi_term::Color = screen[&(x, y)].into();
             print!("{}", ansi_color.paint("█"));
         }
@@ -55,8 +55,8 @@ pub fn render_scene_file(scene: Scene) {
         .collect();
 
     let mut imgbuf: image::RgbImage = image::ImageBuffer::new(
-        scene.camera.x_resolution() as u32,
-        scene.camera.y_resolution() as u32,
+        scene.camera.x_resolution as u32,
+        scene.camera.y_resolution as u32,
     );
 
     for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
@@ -79,8 +79,8 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let width: u32 = scene.camera.x_resolution().into();
-    let height: u32 = scene.camera.y_resolution().into();
+    let width: u32 = scene.camera.x_resolution.into();
+    let height: u32 = scene.camera.y_resolution.into();
 
     let window = video_subsystem
         .window("rust raytracer", width, height)
@@ -211,8 +211,8 @@ pub fn render_frame_scene_sdl2(
     canvas
         .with_texture_canvas(texture, |texture_canvas| {
             texture_canvas.clear();
-            for x in 0..scene.camera.x_resolution() {
-                for y in 0..scene.camera.y_resolution() {
+            for x in 0..scene.camera.x_resolution {
+                for y in 0..scene.camera.y_resolution {
                     let sdl2_color: sdl2::pixels::Color = screen[&(x, y)].into();
                     texture_canvas.set_draw_color(sdl2_color);
                     texture_canvas
