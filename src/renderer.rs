@@ -3,6 +3,7 @@ use crate::Color;
 use crate::GeneratingViewRays;
 use crate::Scene;
 use crate::Vector3;
+use crate::MAX_BOUNCES;
 use rayon::prelude::*;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -13,7 +14,12 @@ pub fn render_scene_console(scene: Scene) {
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
         .into_iter()
-        .map(|view_ray| ((view_ray.x, view_ray.y), cast_ray(&scene, &view_ray.ray)))
+        .map(|view_ray| {
+            (
+                (view_ray.x, view_ray.y),
+                cast_ray(&scene, &view_ray.ray, MAX_BOUNCES),
+            )
+        })
         .collect();
 
     for x in 0..scene.camera.x_resolution() {
@@ -40,7 +46,12 @@ pub fn render_scene_file(scene: Scene) {
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
         .into_iter()
-        .map(|view_ray| ((view_ray.x, view_ray.y), cast_ray(&scene, &view_ray.ray)))
+        .map(|view_ray| {
+            (
+                (view_ray.x, view_ray.y),
+                cast_ray(&scene, &view_ray.ray, MAX_BOUNCES),
+            )
+        })
         .collect();
 
     let mut imgbuf: image::RgbImage = image::ImageBuffer::new(
@@ -190,7 +201,12 @@ pub fn render_frame_scene_sdl2(
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
         .par_iter()
-        .map(|view_ray| ((view_ray.x, view_ray.y), cast_ray(&scene, &view_ray.ray)))
+        .map(|view_ray| {
+            (
+                (view_ray.x, view_ray.y),
+                cast_ray(&scene, &view_ray.ray, MAX_BOUNCES),
+            )
+        })
         .collect();
     canvas
         .with_texture_canvas(texture, |texture_canvas| {

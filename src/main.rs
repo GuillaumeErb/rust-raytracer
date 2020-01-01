@@ -29,6 +29,8 @@ use renderer::render_scene_sdl2;
 
 use std::f64::consts::PI;
 
+const MAX_BOUNCES: u8 = 1;
+
 fn main() -> Result<(), String> {
     let mut objects: Vec<ObjectWithMaterial> = vec![];
     objects.push(ObjectWithMaterial {
@@ -60,6 +62,7 @@ fn main() -> Result<(), String> {
             },
             specular_reflection: 0.4f64,
             shininess: 40f64,
+            reflectivity: 0.3f64,
         }),
     });
     objects.push(ObjectWithMaterial {
@@ -76,13 +79,27 @@ fn main() -> Result<(), String> {
             }
             .normalize(),
         }),
-        material: Material::LambertMaterial(LambertMaterial {
-            color: Color {
+        material: Material::PhongMaterial(PhongMaterial {
+            ambient_color: Color {
+                red: 0.8f64,
+                green: 1f64,
+                blue: 0.8f64,
+            },
+            ambient_reflection: 0.1f64,
+            diffuse_color: Color {
                 red: 1f64,
                 green: 1f64,
                 blue: 1f64,
             },
-            albedo: 1f64,
+            diffuse_reflection: 0.4f64,
+            specular_color: Color {
+                red: 0f64,
+                green: 0f64,
+                blue: 0f64,
+            },
+            specular_reflection: 0f64,
+            shininess: 1f64,
+            reflectivity: 0.2f64,
         }),
     });
     objects.push(ObjectWithMaterial {
@@ -208,7 +225,7 @@ pub struct Intersection<'a> {
     object: &'a ObjectWithMaterial,
 }
 
-pub fn cast_ray(scene: &Scene, ray: &Ray) -> Color {
+pub fn cast_ray(scene: &Scene, ray: &Ray, max_bounces: u8) -> Color {
     let intersection = scene
         .objects
         .par_iter()
@@ -221,7 +238,11 @@ pub fn cast_ray(scene: &Scene, ray: &Ray) -> Color {
         .min_by(|i1, i2| i1.distance.partial_cmp(&i2.distance).unwrap());
 
     intersection
-        .map(|i| (*i.object).material.render_color(ray, &i, &scene))
+        .map(|i| {
+            (*i.object)
+                .material
+                .render_color(ray, &i, &scene, max_bounces)
+        })
         .unwrap_or(BLACK)
 }
 
@@ -276,7 +297,7 @@ mod tests {
                 z: -1f64,
             },
         };
-        let resulting_color = cast_ray(&scene, &ray);
+        let resulting_color = cast_ray(&scene, &ray, 0);
         assert_eq!(
             resulting_color,
             Color {
@@ -347,7 +368,7 @@ mod tests {
                 z: -1f64,
             },
         };
-        let resulting_color = cast_ray(&scene, &ray);
+        let resulting_color = cast_ray(&scene, &ray, 0);
         assert_eq!(
             resulting_color,
             Color {
@@ -420,7 +441,7 @@ mod tests {
                 z: -1f64,
             },
         };
-        let resulting_color = cast_ray(&scene, &ray);
+        let resulting_color = cast_ray(&scene, &ray, 0);
         assert_eq!(
             resulting_color,
             Color {
@@ -479,7 +500,7 @@ mod tests {
                 z: -1f64,
             },
         };
-        let resulting_color = cast_ray(&scene, &ray);
+        let resulting_color = cast_ray(&scene, &ray, 0);
         assert_eq!(
             resulting_color,
             Color {
