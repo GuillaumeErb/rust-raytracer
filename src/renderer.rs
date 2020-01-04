@@ -1,6 +1,7 @@
 use crate::color::Color;
 use crate::engine::render;
 use crate::engine::Scene;
+use crate::geometry::Object;
 use crate::geometry::Vector3;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -92,8 +93,8 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
                     keycode: Some(Keycode::M),
                     ..
                 } => {
-                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
-                    last_object.translate(&Vector3 {
+                    let to_move = get_object_to_move(scene);
+                    to_move.translate(&Vector3 {
                         x: 0f64,
                         y: 0f64,
                         z: -1f64,
@@ -104,8 +105,8 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
                     keycode: Some(Keycode::P),
                     ..
                 } => {
-                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
-                    last_object.translate(&Vector3 {
+                    let to_move = get_object_to_move(scene);
+                    to_move.translate(&Vector3 {
                         x: 0f64,
                         y: 0f64,
                         z: 1f64,
@@ -116,8 +117,8 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
                     keycode: Some(Keycode::Left),
                     ..
                 } => {
-                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
-                    last_object.translate(&Vector3 {
+                    let to_move = get_object_to_move(scene);
+                    to_move.translate(&Vector3 {
                         x: -1f64,
                         y: 0f64,
                         z: 0f64,
@@ -128,8 +129,8 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
                     keycode: Some(Keycode::Right),
                     ..
                 } => {
-                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
-                    last_object.translate(&Vector3 {
+                    let to_move = get_object_to_move(scene);
+                    to_move.translate(&Vector3 {
                         x: 1f64,
                         y: 0f64,
                         z: 0f64,
@@ -140,8 +141,8 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
                     keycode: Some(Keycode::Up),
                     ..
                 } => {
-                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
-                    last_object.translate(&Vector3 {
+                    let to_move = get_object_to_move(scene);
+                    to_move.translate(&Vector3 {
                         x: 0f64,
                         y: 1f64,
                         z: 0f64,
@@ -152,8 +153,8 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
                     keycode: Some(Keycode::Down),
                     ..
                 } => {
-                    let last_object = &mut scene.objects.last_mut().unwrap().geometry;
-                    last_object.translate(&Vector3 {
+                    let to_move = get_object_to_move(scene);
+                    to_move.translate(&Vector3 {
                         x: 0f64,
                         y: -1f64,
                         z: 0f64,
@@ -169,6 +170,16 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+fn get_object_to_move(scene: &mut Scene) -> &mut Object {
+    &mut scene
+        .objects
+        .iter_mut()
+        .filter(|obj| obj.id == 1)
+        .nth(0)
+        .unwrap()
+        .geometry
 }
 
 pub fn render_frame_scene_sdl2(
