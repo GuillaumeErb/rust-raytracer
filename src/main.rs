@@ -75,7 +75,7 @@ fn get_transparent_sphere_in_sphere() -> Scene {
             shininess: 0f64,
             reflectivity: 0f64,
             transparency: 1f64,
-            index_of_refraction: 1.33f64,
+            index_of_refraction: 0.9f64,
         },
     });
     objects.push(SceneObject {

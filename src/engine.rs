@@ -10,7 +10,7 @@ use std::time::Instant;
 
 const MAX_BOUNCES: u8 = 4;
 
-pub type SceneObjectId = i32;
+pub type SceneObjectId = usize;
 
 pub struct SceneObject {
     pub id: SceneObjectId,

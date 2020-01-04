@@ -68,25 +68,43 @@ impl Material {
             rendered_color = &rendered_color + &(self.reflectivity * &reflected_color);
         }
         if self.transparency > 1e-6 && max_bounces > 0 {
-            let kr = fresnel(&ray.ray.direction, &normal, self.index_of_refraction);
+            let outside_index_of_refraction = match ray.inside_objects.last() {
+                Some(x) => scene.objects[*x].material.index_of_refraction,
+                None => 1f64,
+            };
+
+            let kr = fresnel(
+                &ray.ray.direction,
+                &normal,
+                self.index_of_refraction,
+                outside_index_of_refraction,
+            );
             let outside = ray.ray.direction.dot(&normal) < 0f64;
 
             let mut refracted_color = BLACK;
             if kr < 1f64 {
-                let refracted_direction =
-                    refract(&ray.ray.direction, &normal, self.index_of_refraction);
-                let refracted_ray_origin = if outside {
-                    point_precise.add(&normal.times(-1e-6))
+                let refracted_ray_origin;
+                let mut new_inside_objects = ray.inside_objects.clone();
+                if outside {
+                    refracted_ray_origin = point_precise.add(&normal.times(-1e-6));
+                    new_inside_objects.push(intersection.object.id);
                 } else {
-                    point_precise.add(&normal.times(1e-6))
+                    refracted_ray_origin = point_precise.add(&normal.times(1e-6));
+                    new_inside_objects.retain(|&x| x != intersection.object.id);
                 };
+                let refracted_direction = refract(
+                    &ray.ray.direction,
+                    &normal,
+                    self.index_of_refraction,
+                    outside_index_of_refraction,
+                );
                 let refracted_ray = Ray {
                     origin: refracted_ray_origin,
                     direction: refracted_direction,
                 };
                 let refracted_traced_ray = TracedRay {
                     ray: refracted_ray,
-                    inside_objects: ray.inside_objects.clone(),
+                    inside_objects: new_inside_objects,
                 };
                 refracted_color = cast_ray(scene, &refracted_traced_ray, max_bounces - 1);
             }
@@ -116,9 +134,14 @@ impl Material {
     }
 }
 
-fn fresnel(incident: &Vector3, normal: &Vector3, index_of_refraction: f64) -> f64 {
+fn fresnel(
+    incident: &Vector3,
+    normal: &Vector3,
+    index_of_refraction: f64,
+    outside_index_of_refraction: f64,
+) -> f64 {
     let mut cosi = incident.dot(normal);
-    let mut etai = 1f64;
+    let mut etai = outside_index_of_refraction;
     let mut etat = index_of_refraction;
     if cosi > 0f64 {
         swap(&mut etai, &mut etat);
@@ -137,9 +160,14 @@ fn fresnel(incident: &Vector3, normal: &Vector3, index_of_refraction: f64) -> f6
     }
 }
 
-fn refract(incident: &Vector3, normal: &Vector3, index_of_refraction: f64) -> Vector3 {
+fn refract(
+    incident: &Vector3,
+    normal: &Vector3,
+    index_of_refraction: f64,
+    outside_index_of_refraction: f64,
+) -> Vector3 {
     let mut cosi = incident.dot(normal).min(1f64).max(-1f64);
-    let mut etai = 1f64;
+    let mut etai = outside_index_of_refraction;
     let mut etat = index_of_refraction;
     let n;
     if cosi < 0f64 {
