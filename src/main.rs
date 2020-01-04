@@ -22,6 +22,8 @@ use light::DirectionalLight;
 use light::Light;
 use light::PointLight;
 use material::Material;
+use renderer::render_scene_console;
+use renderer::render_scene_file;
 use renderer::render_scene_sdl2;
 
 use std::f64::consts::PI;
@@ -192,7 +194,12 @@ fn main() -> Result<(), String> {
         camera: standard_camera,
     };
 
-    render_scene_sdl2(&mut scene)?;
+    let mode = 2i8;
+    match mode {
+        0 => render_scene_console(&mut scene)?,
+        1 => render_scene_file(&mut scene)?,
+        _ => render_scene_sdl2(&mut scene)?,
+    }
 
     Ok(())
 }

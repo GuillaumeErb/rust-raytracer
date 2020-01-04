@@ -6,15 +6,16 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
 #[allow(unused)]
-pub fn render_scene_console(scene: &Scene) {
+pub fn render_scene_console(scene: &Scene) -> Result<(), String> {
     let screen = render(scene);
-    for x in 0..scene.camera.x_resolution {
-        for y in 0..scene.camera.y_resolution {
+    for y in 0..scene.camera.y_resolution {
+        for x in 0..scene.camera.x_resolution {
             let ansi_color: ansi_term::Color = screen[&(x, y)].into();
             print!("{}", ansi_color.paint("█"));
         }
         println!();
     }
+    Ok(())
 }
 
 impl From<Color> for ansi_term::Color {
@@ -28,7 +29,7 @@ impl From<Color> for ansi_term::Color {
 }
 
 #[allow(unused)]
-pub fn render_scene_file(scene: &Scene) {
+pub fn render_scene_file(scene: &Scene) -> Result<(), String> {
     let screen = render(scene);
     let mut imgbuf: image::RgbImage = image::ImageBuffer::new(
         scene.camera.x_resolution as u32,
@@ -39,6 +40,8 @@ pub fn render_scene_file(scene: &Scene) {
         *pixel = screen[&(x as u16, y as u16)].into();
     }
     imgbuf.save("output.png").unwrap();
+
+    Ok(())
 }
 
 impl From<Color> for image::Rgb<u8> {
