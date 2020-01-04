@@ -67,7 +67,7 @@ pub struct Plane {
     pub normal: Vector3,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
     pub direction: Vector3,

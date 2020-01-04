@@ -1,6 +1,6 @@
-use crate::Color;
-use crate::Point;
-use crate::Vector3;
+use crate::color::Color;
+use crate::geometry::Point;
+use crate::geometry::Vector3;
 
 #[derive(Debug)]
 pub enum Light {

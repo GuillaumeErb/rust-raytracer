@@ -1,5 +1,6 @@
 mod camera;
 mod color;
+mod engine;
 mod geometry;
 mod intersectable;
 mod light;
@@ -7,22 +8,22 @@ mod material;
 mod renderer;
 
 use camera::Camera;
-use camera::GeneratingViewRays;
+use camera::ViewRay;
 use color::Color;
 use color::BLACK;
+use engine::Scene;
+use engine::SceneObject;
 use geometry::Object;
 use geometry::Plane;
 use geometry::Point;
 use geometry::Ray;
 use geometry::Sphere;
 use geometry::Vector3;
-use intersectable::Intersectable;
 use light::AmbientLight;
 use light::DirectionalLight;
 use light::Light;
 use light::PointLight;
 use material::Material;
-use rayon::prelude::*;
 use renderer::render_scene_sdl2;
 
 use std::f64::consts::PI;
@@ -30,8 +31,9 @@ use std::f64::consts::PI;
 const MAX_BOUNCES: u8 = 1;
 
 fn main() -> Result<(), String> {
-    let mut objects: Vec<ObjectWithMaterial> = vec![];
-    objects.push(ObjectWithMaterial {
+    let mut objects: Vec<SceneObject> = vec![];
+    objects.push(SceneObject {
+        id: 0,
         geometry: Object::Sphere(Sphere {
             center: Point {
                 x: 0f64,
@@ -63,7 +65,8 @@ fn main() -> Result<(), String> {
             reflectivity: 0.3f64,
         },
     });
-    objects.push(ObjectWithMaterial {
+    objects.push(SceneObject {
+        id: 1,
         geometry: Object::Plane(Plane {
             point: Point {
                 x: 5f64,
@@ -100,7 +103,8 @@ fn main() -> Result<(), String> {
             reflectivity: 0.2f64,
         },
     });
-    objects.push(ObjectWithMaterial {
+    objects.push(SceneObject {
+        id: 2,
         geometry: Object::Sphere(Sphere {
             center: Point {
                 x: -5f64,
@@ -195,56 +199,4 @@ fn main() -> Result<(), String> {
     render_scene_sdl2(&mut scene)?;
 
     Ok(())
-}
-
-pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
-    let light_direction = light.get_direction(point);
-    let shadow_ray = Ray {
-        origin: *point,
-        direction: light_direction.times(-1f64),
-    };
-
-    scene
-        .objects
-        .par_iter()
-        .filter_map(|object| object.geometry.intersect(&shadow_ray))
-        .any(|_d| true)
-}
-
-struct ObjectWithMaterial {
-    geometry: Object,
-    material: Material,
-}
-
-pub struct Scene {
-    objects: Vec<ObjectWithMaterial>,
-    ambient_light: AmbientLight,
-    lights: Vec<Light>,
-    camera: Camera,
-}
-
-pub struct Intersection<'a> {
-    distance: f64,
-    object: &'a ObjectWithMaterial,
-}
-
-pub fn cast_ray(scene: &Scene, ray: &Ray, max_bounces: u8) -> Color {
-    let intersection = scene
-        .objects
-        .par_iter()
-        .filter_map(|object| {
-            object.geometry.intersect(ray).map(|distance| Intersection {
-                distance: distance,
-                object: &object,
-            })
-        })
-        .min_by(|i1, i2| i1.distance.partial_cmp(&i2.distance).unwrap());
-
-    intersection
-        .map(|i| {
-            (*i.object)
-                .material
-                .render_color(ray, &i, &scene, max_bounces)
-        })
-        .unwrap_or(BLACK)
 }

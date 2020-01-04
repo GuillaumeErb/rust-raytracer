@@ -1,6 +1,6 @@
-use crate::Point;
-use crate::Ray;
-use crate::Vector3;
+use crate::geometry::Point;
+use crate::geometry::Ray;
+use crate::geometry::Vector3;
 
 pub struct Camera {
     pub position: Point,

@@ -1,26 +1,15 @@
-use crate::cast_ray;
-use crate::Color;
-use crate::GeneratingViewRays;
-use crate::Scene;
-use crate::Vector3;
-use crate::MAX_BOUNCES;
-use rayon::prelude::*;
+use crate::camera::GeneratingViewRays;
+use crate::color::Color;
+use crate::engine::render_viewport;
+use crate::engine::Scene;
+use crate::geometry::Vector3;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use std::collections::HashMap;
 
 #[allow(unused)]
-pub fn render_scene_console(scene: Scene) {
+pub fn render_scene_console(scene: &Scene) {
     let viewport = scene.camera.generate_viewport();
-    let screen: HashMap<_, _> = viewport
-        .into_iter()
-        .map(|view_ray| {
-            (
-                (view_ray.x, view_ray.y),
-                cast_ray(&scene, &view_ray.ray, MAX_BOUNCES),
-            )
-        })
-        .collect();
+    let screen = render_viewport(&viewport, scene);
 
     for x in 0..scene.camera.x_resolution {
         for y in 0..scene.camera.y_resolution {
@@ -42,17 +31,9 @@ impl From<Color> for ansi_term::Color {
 }
 
 #[allow(unused)]
-pub fn render_scene_file(scene: Scene) {
+pub fn render_scene_file(scene: &Scene) {
     let viewport = scene.camera.generate_viewport();
-    let screen: HashMap<_, _> = viewport
-        .into_iter()
-        .map(|view_ray| {
-            (
-                (view_ray.x, view_ray.y),
-                cast_ray(&scene, &view_ray.ray, MAX_BOUNCES),
-            )
-        })
-        .collect();
+    let screen = render_viewport(&viewport, scene);
 
     let mut imgbuf: image::RgbImage = image::ImageBuffer::new(
         scene.camera.x_resolution as u32,
@@ -199,15 +180,7 @@ pub fn render_frame_scene_sdl2(
     height: u32,
 ) -> Result<(), String> {
     let viewport = scene.camera.generate_viewport();
-    let screen: HashMap<_, _> = viewport
-        .par_iter()
-        .map(|view_ray| {
-            (
-                (view_ray.x, view_ray.y),
-                cast_ray(&scene, &view_ray.ray, MAX_BOUNCES),
-            )
-        })
-        .collect();
+    let screen = render_viewport(&viewport, scene);
     canvas
         .with_texture_canvas(texture, |texture_canvas| {
             texture_canvas.clear();

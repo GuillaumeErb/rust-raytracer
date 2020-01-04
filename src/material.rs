@@ -1,9 +1,10 @@
-use crate::cast_ray;
-use crate::is_in_shadow;
-use crate::Color;
-use crate::Intersection;
-use crate::Ray;
-use crate::Scene;
+use crate::color::Color;
+use crate::engine::cast_ray;
+use crate::engine::is_in_shadow;
+use crate::engine::Intersection;
+use crate::engine::Scene;
+use crate::engine::TracedRay;
+use crate::geometry::Ray;
 
 #[derive(Debug)]
 pub struct Material {
@@ -20,12 +21,15 @@ pub struct Material {
 impl Material {
     pub fn render_color(
         &self,
-        ray: &Ray,
+        ray: &mut TracedRay,
         intersection: &Intersection,
         scene: &Scene,
         max_bounces: u8,
     ) -> Color {
-        let point_precise = ray.origin.add(&ray.direction.times(intersection.distance));
+        let point_precise = ray
+            .ray
+            .origin
+            .add(&ray.ray.direction.times(intersection.distance));
         let normal = intersection.object.geometry.get_normal(&point_precise);
         let point = point_precise.add(&normal.times(1e-6));
 
@@ -38,7 +42,7 @@ impl Material {
             }
 
             let to_light = &light.get_direction(&point).times(-1f64);
-            let to_eye = ray.direction.times(-1f64);
+            let to_eye = ray.ray.direction.times(-1f64);
             let light_normal_reflection = to_light.symmetry(&normal);
             let diffuse = self.diffuse_reflection * normal.dot(to_light).max(0f64);
             let specular = self.specular_reflection
@@ -54,10 +58,11 @@ impl Material {
         if self.reflectivity > 1e-6 && max_bounces > 0 {
             let reflected_ray = Ray {
                 origin: point,
-                direction: ray.direction.times(-1f64).symmetry(&normal),
+                direction: ray.ray.direction.times(-1f64).symmetry(&normal),
             };
-            rendered_color = &rendered_color
-                + &(self.reflectivity * &cast_ray(scene, &reflected_ray, max_bounces - 1));
+            ray.ray = reflected_ray;
+            rendered_color =
+                &rendered_color + &(self.reflectivity * &cast_ray(scene, ray, max_bounces - 1));
         }
         rendered_color
     }
