@@ -8,23 +8,12 @@ mod material;
 mod renderer;
 
 use camera::Camera;
-use color::Color;
-use color::BLACK;
-use engine::Scene;
-use engine::SceneObject;
-use geometry::Object;
-use geometry::Plane;
-use geometry::Point;
-use geometry::Sphere;
-use geometry::Vector3;
-use light::AmbientLight;
-use light::DirectionalLight;
-use light::Light;
-use light::PointLight;
+use color::{Color, BLACK};
+use engine::{Scene, SceneObject};
+use geometry::{Object, Plane, Point, Sphere, Vector3};
+use light::{AmbientLight, DirectionalLight, Light, PointLight};
 use material::Material;
-use renderer::render_scene_console;
-use renderer::render_scene_file;
-use renderer::render_scene_sdl2;
+use renderer::{render_scene_console, render_scene_file, render_scene_sdl2};
 
 use std::f64::consts::PI;
 
@@ -61,6 +50,8 @@ fn main() -> Result<(), String> {
             specular_reflection: 0.4f64,
             shininess: 40f64,
             reflectivity: 0.3f64,
+            transparency: 0f64,
+            index_of_refraction: 0f64,
         },
     });
     objects.push(SceneObject {
@@ -99,6 +90,8 @@ fn main() -> Result<(), String> {
             specular_reflection: 0f64,
             shininess: 1f64,
             reflectivity: 0.2f64,
+            transparency: 0f64,
+            index_of_refraction: 0f64,
         },
     });
     objects.push(SceneObject {
@@ -119,11 +112,13 @@ fn main() -> Result<(), String> {
                 green: 0.1f64,
                 blue: 0.1f64,
             },
-            diffuse_reflection: 1f64 / PI,
+            diffuse_reflection: 0.5f64 / PI,
             specular_color: BLACK,
             specular_reflection: 0f64,
             shininess: 1f64,
             reflectivity: 0f64,
+            transparency: 0.9f64,
+            index_of_refraction: 1.33f64,
         },
     });
 
@@ -183,8 +178,8 @@ fn main() -> Result<(), String> {
             z: 0f64,
         },
         field_of_view: PI / 2f64,
-        x_resolution: 600u16,
-        y_resolution: 400u16,
+        x_resolution: 500u16,
+        y_resolution: 250u16,
     };
 
     let mut scene = Scene {

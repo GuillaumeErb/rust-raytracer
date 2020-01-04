@@ -64,6 +64,7 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
     let window = video_subsystem
         .window("rust raytracer", width, height)
         .position_centered()
+        .resizable()
         .build()
         .map_err(|e| e.to_string())?;
     let mut canvas = window

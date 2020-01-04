@@ -19,20 +19,25 @@ impl Intersectable for Object {
 impl Intersectable for Sphere {
     fn intersect(&self, ray: &Ray) -> Option<f64> {
         let l = &self.center - &ray.origin;
-        let t_ca = l.dot(&ray.direction);
-        if t_ca < 0f64 {
+        let adj = l.dot(&ray.direction);
+        let d2 = l.dot(&l) - (adj * adj);
+        let radius2 = self.radius * self.radius;
+        if d2 > radius2 {
+            return None;
+        }
+        let thc = (radius2 - d2).sqrt();
+        let t0 = adj - thc;
+        let t1 = adj + thc;
+
+        if t0 < 0.0 && t1 < 0.0 {
             None
+        } else if t0 < 0.0 {
+            Some(t1)
+        } else if t1 < 0.0 {
+            Some(t0)
         } else {
-            let d2 = l.dot(&l) - (t_ca * t_ca);
-            let r2 = self.radius * self.radius;
-            if r2 < d2 {
-                None
-            } else {
-                let t_hc = (r2 - d2).sqrt();
-                let t1 = t_ca - t_hc;
-                let t2 = t_ca + t_hc;
-                Some(t1.min(t2))
-            }
+            let distance = if t0 < t1 { t0 } else { t1 };
+            Some(distance)
         }
     }
 }
@@ -108,5 +113,32 @@ mod tests {
         };
         let intersection = sphere.intersect(&ray);
         assert_eq!(intersection.is_none(), true);
+    }
+
+    #[test]
+    fn sphere_casted_inside() {
+        let sphere = Sphere {
+            center: Point {
+                x: 0f64,
+                y: 0f64,
+                z: 0f64,
+            },
+            radius: 4f64,
+        };
+        let ray = Ray {
+            origin: Point {
+                x: 0f64,
+                y: 0f64,
+                z: 0f64,
+            },
+            direction: Vector3 {
+                x: -1f64,
+                y: 0f64,
+                z: 0f64,
+            },
+        };
+        let intersection = sphere.intersect(&ray);
+        assert_eq!(intersection.is_some(), true);
+        assert_eq!(intersection.unwrap(), 4f64);
     }
 }

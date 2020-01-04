@@ -1,18 +1,14 @@
-use crate::camera::Camera;
-use crate::camera::GeneratingViewRays;
-use crate::color::Color;
-use crate::color::BLACK;
-use crate::geometry::Object;
-use crate::geometry::Point;
-use crate::geometry::Ray;
+use crate::camera::{Camera, GeneratingViewRays};
+use crate::color::{Color, BLACK};
+use crate::geometry::{Object, Point, Ray};
 use crate::intersectable::Intersectable;
-use crate::light::AmbientLight;
-use crate::light::Light;
+use crate::light::{AmbientLight, Light};
 use crate::material::Material;
 use rayon::prelude::*;
 use std::collections::HashMap;
+use std::time::Instant;
 
-const MAX_BOUNCES: u8 = 1;
+const MAX_BOUNCES: u8 = 4;
 
 pub type SceneObjectId = i32;
 
@@ -40,6 +36,7 @@ pub struct TracedRay {
 }
 
 pub fn render(scene: &Scene) -> HashMap<(u16, u16), Color> {
+    let now = Instant::now();
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
         .par_iter()
@@ -53,7 +50,7 @@ pub fn render(scene: &Scene) -> HashMap<(u16, u16), Color> {
             (coordinates, result)
         })
         .collect();
-
+    println!("{}", now.elapsed().as_millis());
     screen
 }
 
@@ -66,15 +63,15 @@ pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
 
     scene
         .objects
-        .par_iter()
+        .iter()
         .filter_map(|object| object.geometry.intersect(&shadow_ray))
         .any(|_d| true)
 }
 
-pub fn cast_ray(scene: &Scene, ray: &mut TracedRay, max_bounces: u8) -> Color {
+pub fn cast_ray(scene: &Scene, ray: &TracedRay, max_bounces: u8) -> Color {
     let intersection = scene
         .objects
-        .par_iter()
+        .iter()
         .filter_map(|object| {
             object
                 .geometry
