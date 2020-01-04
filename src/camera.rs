@@ -11,6 +11,12 @@ pub struct Camera {
     pub y_resolution: u16,
 }
 
+pub struct ViewRay {
+    pub x: u16,
+    pub y: u16,
+    pub ray: Ray,
+}
+
 pub trait GeneratingViewRays {
     fn generate_viewport(&self) -> Vec<ViewRay>;
 }
@@ -48,10 +54,4 @@ impl GeneratingViewRays for Camera {
         }
         view_rays
     }
-}
-
-pub struct ViewRay {
-    pub x: u16,
-    pub y: u16,
-    pub ray: Ray,
 }

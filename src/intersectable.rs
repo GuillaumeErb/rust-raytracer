@@ -1,7 +1,7 @@
-use crate::Object;
-use crate::Plane;
-use crate::Ray;
-use crate::Sphere;
+use crate::geometry::Object;
+use crate::geometry::Plane;
+use crate::geometry::Ray;
+use crate::geometry::Sphere;
 
 pub trait Intersectable {
     fn intersect(&self, ray: &Ray) -> Option<f64>;

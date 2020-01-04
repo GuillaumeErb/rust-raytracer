@@ -1,17 +1,18 @@
+use crate::camera::Camera;
+use crate::camera::GeneratingViewRays;
+use crate::color::Color;
+use crate::color::BLACK;
+use crate::geometry::Object;
+use crate::geometry::Point;
+use crate::geometry::Ray;
 use crate::intersectable::Intersectable;
-use crate::AmbientLight;
-use crate::Camera;
-use crate::Color;
-use crate::Light;
-use crate::Material;
-use crate::Object;
-use crate::Point;
-use crate::Ray;
-use crate::ViewRay;
-use crate::BLACK;
-use crate::MAX_BOUNCES;
+use crate::light::AmbientLight;
+use crate::light::Light;
+use crate::material::Material;
 use rayon::prelude::*;
 use std::collections::HashMap;
+
+const MAX_BOUNCES: u8 = 1;
 
 pub type SceneObjectId = i32;
 
@@ -38,7 +39,8 @@ pub struct TracedRay {
     pub inside_objects: Vec<SceneObjectId>,
 }
 
-pub fn render_viewport(viewport: &Vec<ViewRay>, scene: &Scene) -> HashMap<(u16, u16), Color> {
+pub fn render(scene: &Scene) -> HashMap<(u16, u16), Color> {
+    let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
         .par_iter()
         .map(|view_ray| {

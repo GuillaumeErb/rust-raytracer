@@ -1,6 +1,5 @@
-use crate::camera::GeneratingViewRays;
 use crate::color::Color;
-use crate::engine::render_viewport;
+use crate::engine::render;
 use crate::engine::Scene;
 use crate::geometry::Vector3;
 use sdl2::event::Event;
@@ -8,9 +7,7 @@ use sdl2::keyboard::Keycode;
 
 #[allow(unused)]
 pub fn render_scene_console(scene: &Scene) {
-    let viewport = scene.camera.generate_viewport();
-    let screen = render_viewport(&viewport, scene);
-
+    let screen = render(scene);
     for x in 0..scene.camera.x_resolution {
         for y in 0..scene.camera.y_resolution {
             let ansi_color: ansi_term::Color = screen[&(x, y)].into();
@@ -32,9 +29,7 @@ impl From<Color> for ansi_term::Color {
 
 #[allow(unused)]
 pub fn render_scene_file(scene: &Scene) {
-    let viewport = scene.camera.generate_viewport();
-    let screen = render_viewport(&viewport, scene);
-
+    let screen = render(scene);
     let mut imgbuf: image::RgbImage = image::ImageBuffer::new(
         scene.camera.x_resolution as u32,
         scene.camera.y_resolution as u32,
@@ -179,8 +174,7 @@ pub fn render_frame_scene_sdl2(
     width: u32,
     height: u32,
 ) -> Result<(), String> {
-    let viewport = scene.camera.generate_viewport();
-    let screen = render_viewport(&viewport, scene);
+    let screen = render(scene);
     canvas
         .with_texture_canvas(texture, |texture_canvas| {
             texture_canvas.clear();

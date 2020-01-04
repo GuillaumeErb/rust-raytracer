@@ -8,7 +8,6 @@ mod material;
 mod renderer;
 
 use camera::Camera;
-use camera::ViewRay;
 use color::Color;
 use color::BLACK;
 use engine::Scene;
@@ -16,7 +15,6 @@ use engine::SceneObject;
 use geometry::Object;
 use geometry::Plane;
 use geometry::Point;
-use geometry::Ray;
 use geometry::Sphere;
 use geometry::Vector3;
 use light::AmbientLight;
@@ -27,8 +25,6 @@ use material::Material;
 use renderer::render_scene_sdl2;
 
 use std::f64::consts::PI;
-
-const MAX_BOUNCES: u8 = 1;
 
 fn main() -> Result<(), String> {
     let mut objects: Vec<SceneObject> = vec![];
