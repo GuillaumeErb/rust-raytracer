@@ -1,20 +1,36 @@
 use crate::color::{Color, BLACK};
 use crate::engine::{cast_ray, is_in_shadow, Intersection, Scene, TracedRay};
-use crate::geometry::{Ray, Vector3};
+use crate::geometry::{Object, Point3, Ray, Vector3};
+use crate::texture::Texture;
 use std::mem::swap;
 
 #[derive(Debug)]
 pub struct Material {
-    pub ambient_color: Color,
+    pub ambient_color: Coloration,
     pub ambient_reflection: f64,
-    pub diffuse_color: Color,
+    pub diffuse_color: Coloration,
     pub diffuse_reflection: f64,
-    pub specular_color: Color,
+    pub specular_color: Coloration,
     pub specular_reflection: f64,
     pub shininess: f64,
     pub reflectivity: f64,
     pub transparency: f64,
     pub index_of_refraction: f64,
+}
+
+#[derive(Debug)]
+pub enum Coloration {
+    Color(Color),
+    Texture(Texture),
+}
+
+impl Coloration {
+    pub fn color(&self, object: &Object, point: &Point3) -> Color {
+        match self {
+            Coloration::Color(c) => c.clone(),
+            Coloration::Texture(t) => t.get_color(object, point),
+        }
+    }
 }
 
 impl Material {
@@ -33,7 +49,10 @@ impl Material {
         let point = point_precise.add(&normal.times(1e-6));
 
         let mut rendered_color = &(&scene.ambient_light.color
-            * &(&self.ambient_color * self.ambient_reflection))
+            * &(&self
+                .ambient_color
+                .color(&intersection.object.geometry, &point_precise)
+                * self.ambient_reflection))
             * scene.ambient_light.intensity;
         for light in &scene.lights {
             if is_in_shadow(&point, &light, scene) {
@@ -49,10 +68,16 @@ impl Material {
 
             rendered_color = &rendered_color
                 + &(diffuse
-                    * &(&(&light.get_color() * light.get_intensity()) * &self.diffuse_color));
+                    * &(&(&light.get_color() * light.get_intensity())
+                        * &self
+                            .diffuse_color
+                            .color(&intersection.object.geometry, &point_precise)));
             rendered_color = &rendered_color
                 + &(specular
-                    * &(&(&light.get_color() * light.get_intensity()) * &self.specular_color));
+                    * &(&(&light.get_color() * light.get_intensity())
+                        * &self
+                            .specular_color
+                            .color(&intersection.object.geometry, &point_precise)));
         }
 
         if self.reflectivity > 1e-6 && max_bounces > 0 {

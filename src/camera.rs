@@ -1,9 +1,9 @@
-use crate::geometry::Point;
+use crate::geometry::Point3;
 use crate::geometry::Ray;
 use crate::geometry::Vector3;
 
 pub struct Camera {
-    pub position: Point,
+    pub position: Point3,
     pub direction: Vector3,
     pub up_direction: Vector3,
     pub field_of_view: f64,

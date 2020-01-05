@@ -60,12 +60,12 @@ impl Intersectable for Plane {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Point;
+    use crate::Point3;
     use crate::Vector3;
     #[test]
     fn sphere_intersection() {
         let sphere = Sphere {
-            center: Point {
+            center: Point3 {
                 x: 0f64,
                 y: 0f64,
                 z: 0f64,
@@ -73,7 +73,7 @@ mod tests {
             radius: 4f64,
         };
         let ray = Ray {
-            origin: Point {
+            origin: Point3 {
                 x: -10f64,
                 y: 0f64,
                 z: 0f64,
@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn sphere_no_intersection() {
         let sphere = Sphere {
-            center: Point {
+            center: Point3 {
                 x: 0f64,
                 y: 0f64,
                 z: 0f64,
@@ -100,7 +100,7 @@ mod tests {
             radius: 4f64,
         };
         let ray = Ray {
-            origin: Point {
+            origin: Point3 {
                 x: -10f64,
                 y: 0f64,
                 z: 0f64,
@@ -118,7 +118,7 @@ mod tests {
     #[test]
     fn sphere_casted_inside() {
         let sphere = Sphere {
-            center: Point {
+            center: Point3 {
                 x: 0f64,
                 y: 0f64,
                 z: 0f64,
@@ -126,7 +126,7 @@ mod tests {
             radius: 4f64,
         };
         let ray = Ray {
-            origin: Point {
+            origin: Point3 {
                 x: 0f64,
                 y: 0f64,
                 z: 0f64,

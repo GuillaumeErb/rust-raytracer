@@ -1,13 +1,13 @@
 #[derive(Copy, Clone, Debug)]
-pub struct Point {
+pub struct Point3 {
     pub x: f64,
     pub y: f64,
     pub z: f64,
 }
 
-impl Point {
-    pub fn add(&self, vector: &Vector3) -> Point {
-        Point {
+impl Point3 {
+    pub fn add(&self, vector: &Vector3) -> Point3 {
+        Point3 {
             x: self.x + vector.x,
             y: self.y + vector.y,
             z: self.z + vector.z,
@@ -15,10 +15,10 @@ impl Point {
     }
 }
 
-impl std::ops::Sub for &Point {
+impl std::ops::Sub for &Point3 {
     type Output = Vector3;
 
-    fn sub(self, other: &Point) -> Vector3 {
+    fn sub(self, other: &Point3) -> Vector3 {
         Vector3 {
             x: self.x - other.x,
             y: self.y - other.y,
@@ -27,6 +27,14 @@ impl std::ops::Sub for &Point {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
+pub struct Point2 {
+    pub x: f64,
+    pub y: f64,
+}
+
+pub const POINT2_ORIGIN: Point2 = Point2 { x: 0f64, y: 0f64 };
+
 #[derive(Debug)]
 pub enum Object {
     Sphere(Sphere),
@@ -34,7 +42,7 @@ pub enum Object {
 }
 
 impl Object {
-    pub fn get_normal(&self, point: &Point) -> Vector3 {
+    pub fn get_normal(&self, point: &Point3) -> Vector3 {
         match *self {
             Object::Sphere(ref obj) => obj.get_normal(point),
             Object::Plane(ref obj) => obj.normal,
@@ -51,25 +59,25 @@ impl Object {
 
 #[derive(Debug)]
 pub struct Sphere {
-    pub center: Point,
+    pub center: Point3,
     pub radius: f64,
 }
 
 impl Sphere {
-    pub fn get_normal(&self, point: &Point) -> Vector3 {
+    pub fn get_normal(&self, point: &Point3) -> Vector3 {
         (point - &self.center).normalize()
     }
 }
 
 #[derive(Debug)]
 pub struct Plane {
-    pub point: Point,
+    pub point: Point3,
     pub normal: Vector3,
 }
 
 #[derive(Debug, Clone)]
 pub struct Ray {
-    pub origin: Point,
+    pub origin: Point3,
     pub direction: Vector3,
 }
 
@@ -109,8 +117,12 @@ impl Vector3 {
         }
     }
 
+    pub fn norm(&self) -> f64 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    }
+
     pub fn normalize(&self) -> Vector3 {
-        let normalization = 1f64 / (self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
+        let normalization = 1f64 / self.norm();
         Vector3 {
             x: self.x * normalization,
             y: self.y * normalization,

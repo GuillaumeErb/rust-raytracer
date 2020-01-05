@@ -1,6 +1,6 @@
 use crate::camera::{Camera, GeneratingViewRays};
 use crate::color::{Color, BLACK};
-use crate::geometry::{Object, Point, Ray};
+use crate::geometry::{Object, Point3, Ray};
 use crate::intersectable::Intersectable;
 use crate::light::{AmbientLight, Light};
 use crate::material::Material;
@@ -54,7 +54,7 @@ pub fn render(scene: &Scene) -> HashMap<(u16, u16), Color> {
     screen
 }
 
-pub fn is_in_shadow(point: &Point, light: &Light, scene: &Scene) -> bool {
+pub fn is_in_shadow(point: &Point3, light: &Light, scene: &Scene) -> bool {
     let light_direction = light.get_direction(point);
     let shadow_ray = Ray {
         origin: *point,

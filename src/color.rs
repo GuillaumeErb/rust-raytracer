@@ -13,6 +13,12 @@ pub const BLACK: Color = Color {
     blue: 0f64,
 };
 
+pub const WHITE: Color = Color {
+    red: 1f64,
+    green: 1f64,
+    blue: 1f64,
+};
+
 impl ops::Mul<f64> for &Color {
     type Output = Color;
 
