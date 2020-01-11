@@ -5,6 +5,7 @@ mod geometry;
 mod intersectable;
 mod light;
 mod material;
+mod parser;
 mod renderer;
 mod texture;
 
@@ -15,14 +16,15 @@ use geometry::{Object, Plane, Point3, Sphere, Vector3, POINT2_ORIGIN};
 use light::{AmbientLight, DirectionalLight, Light, Point3Light};
 use material::{Coloration, Material};
 use renderer::{render_scene_console, render_scene_file, render_scene_sdl2};
+use std::sync::Arc;
 use texture::{get_checkboard, Texture};
 
 use std::f64::consts::PI;
 
 fn main() -> Result<(), String> {
-    let mut scene = get_transparent_sphere_in_sphere();
+    let mut scene = get_mesh();
 
-    let mode = 2i8;
+    let mode = 9i8;
     match mode {
         0 => render_scene_console(&mut scene)?,
         1 => render_scene_file(&mut scene)?,
@@ -30,6 +32,78 @@ fn main() -> Result<(), String> {
     }
 
     Ok(())
+}
+
+fn get_mesh() -> Scene {
+    let mut objects: Vec<SceneObject> = vec![];
+    let mesh = Arc::new(parser::parse_obj("res/suzanne.obj".to_string()));
+    let mut id: usize = 0;
+    for triangle in geometry::get_triangles(mesh) {
+        objects.push(SceneObject {
+            id: id,
+            geometry: Object::MeshTriangle(triangle),
+            material: Material {
+                ambient_color: Coloration::Color(Color {
+                    red: 1f64,
+                    green: 0f64,
+                    blue: 0f64,
+                }),
+                ambient_reflection: 0.6f64,
+                diffuse_color: Coloration::Color(Color {
+                    red: 0f64,
+                    green: 0f64,
+                    blue: 1f64,
+                }),
+                diffuse_reflection: 0.4f64,
+                specular_color: Coloration::Color(BLACK),
+                specular_reflection: 0f64,
+                shininess: 0f64,
+                reflectivity: 0f64,
+                transparency: 0f64,
+                index_of_refraction: 0f64,
+            },
+        });
+        id += 1;
+    }
+
+    let mut lights: Vec<Light> = vec![];
+
+    let ambient_light = AmbientLight {
+        color: Color {
+            red: 1f64,
+            green: 1f64,
+            blue: 1f64,
+        },
+        intensity: 1f64,
+    };
+
+    let standard_camera = Camera {
+        position: Point3 {
+            x: 0f64,
+            y: 0f64,
+            z: -5f64,
+        },
+        direction: Vector3 {
+            x: 0f64,
+            y: 0f64,
+            z: 1f64,
+        },
+        up_direction: Vector3 {
+            x: 0f64,
+            y: 1f64,
+            z: 0f64,
+        },
+        field_of_view: PI / 4f64,
+        x_resolution: 300u16,
+        y_resolution: 300u16,
+    };
+
+    Scene {
+        objects: objects,
+        lights: lights,
+        ambient_light: ambient_light,
+        camera: standard_camera,
+    }
 }
 
 fn get_transparent_sphere_in_sphere() -> Scene {

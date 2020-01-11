@@ -119,7 +119,7 @@ impl Material {
                 };
                 let refracted_direction = refract(
                     &ray.ray.direction,
-                    &normal,
+                    &normal,    
                     self.index_of_refraction,
                     outside_index_of_refraction,
                 );

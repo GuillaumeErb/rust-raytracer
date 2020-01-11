@@ -1,5 +1,5 @@
 use crate::color::{Color, BLACK, WHITE};
-use crate::geometry::{Object, Plane, Point2, Point3, Sphere, Vector3};
+use crate::geometry::{MeshTriangle, Object, Plane, Point2, Point3, Sphere, Vector3};
 use std::f64::consts::PI;
 
 #[derive(Debug)]
@@ -33,6 +33,7 @@ impl Texturable for Object {
         match *self {
             Object::Sphere(ref obj) => obj.get_2d_coordinate(point),
             Object::Plane(ref obj) => obj.get_2d_coordinate(point),
+            Object::MeshTriangle(ref obj) => obj.get_2d_coordinate(point),
         }
     }
 }
@@ -69,6 +70,32 @@ impl Texturable for Plane {
             x: hit_vec.dot(&x_axis),
             y: hit_vec.dot(&y_axis),
         }
+    }
+}
+
+impl Texturable for MeshTriangle {
+    fn get_2d_coordinate(&self, point: &Point3) -> Point2 {
+        let triangle = &self.mesh.triangles[self.triangle_index];
+
+        let a = self.mesh.vertices[triangle.vertex_a.vertex_index];
+        let b = self.mesh.vertices[triangle.vertex_b.vertex_index];
+        let c = self.mesh.vertices[triangle.vertex_c.vertex_index];
+
+        let ab = (&b - &a).normalize();
+        let ac = (&c - &a).normalize();
+        let ap = point - &a;
+
+        let ab_point = ab.dot(&ap);
+        let ac_point = ac.dot(&ap);
+
+        let a_t = self.mesh.texture_mapping[triangle.vertex_a.texture_index];
+        let b_t = self.mesh.texture_mapping[triangle.vertex_b.texture_index];
+        let c_t = self.mesh.texture_mapping[triangle.vertex_c.texture_index];
+
+        let ab_t = (&b_t - &a_t).normalize();
+        let ac_t = (&c_t - &a_t).normalize();
+
+        &a_t + &(&(&ab_t * ab_point) + &(&ac_t * ac_point))
     }
 }
 

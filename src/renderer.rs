@@ -172,7 +172,7 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
     Ok(())
 }
 
-fn get_object_to_move(scene: &mut Scene) -> &mut Object {
+fn get_object_to_move<'a>(scene: &'a mut Scene) -> &'a mut Object {
     &mut scene
         .objects
         .iter_mut()

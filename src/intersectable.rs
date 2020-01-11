@@ -1,7 +1,14 @@
+use crate::geometry::get_triangles;
+use crate::geometry::Mesh;
+use crate::geometry::MeshPlainTriangle;
+use crate::geometry::MeshTriangle;
+use crate::geometry::MeshVertex;
 use crate::geometry::Object;
 use crate::geometry::Plane;
 use crate::geometry::Ray;
 use crate::geometry::Sphere;
+use crate::geometry::POINT3_ORIGIN;
+use std::sync::Arc;
 
 pub trait Intersectable {
     fn intersect(&self, ray: &Ray) -> Option<f64>;
@@ -12,6 +19,7 @@ impl Intersectable for Object {
         match self {
             Object::Sphere(ref obj) => obj.intersect(ray),
             Object::Plane(ref obj) => obj.intersect(ray),
+            Object::MeshTriangle(ref obj) => obj.intersect(ray),
         }
     }
 }
@@ -54,6 +62,46 @@ impl Intersectable for Plane {
             }
         }
         None
+    }
+}
+
+impl Intersectable for MeshTriangle {
+    // Moller Trumbore algorithm
+    fn intersect(&self, ray: &Ray) -> Option<f64> {
+        let triangle = &self.mesh.triangles[self.triangle_index];
+        let v0 = &self.mesh.vertices[triangle.vertex_a.vertex_index];
+        let v1 = &self.mesh.vertices[triangle.vertex_b.vertex_index];
+        let v2 = &self.mesh.vertices[triangle.vertex_c.vertex_index];
+
+        let v0v1 = v1 - v0;
+        let v0v2 = v2 - v0;
+
+        let pvec = ray.direction.cross(&v0v2);
+        let det = v0v1.dot(&pvec);
+
+        if det.abs() < 1e-6 {
+            // remove abs for culling
+            return None;
+        }
+
+        let inv_det = 1f64 / det;
+        let tvec = &ray.origin - &v0;
+        let u = tvec.dot(&pvec) * inv_det;
+
+        if u < 0f64 || u > 1f64 {
+            return None;
+        }
+
+        let qvec = tvec.cross(&v0v1);
+        let v = ray.direction.dot(&qvec) * inv_det;
+
+        if v < 0f64 || u + v > 1f64 {
+            return None;
+        }
+
+        let t = v0v2.dot(&qvec) * inv_det;
+
+        Some(t)
     }
 }
 
@@ -138,6 +186,65 @@ mod tests {
             },
         };
         let intersection = sphere.intersect(&ray);
+        assert_eq!(intersection.is_some(), true);
+        assert_eq!(intersection.unwrap(), 4f64);
+    }
+
+    #[test]
+    fn triangle_intersection() {
+        let mesh = Arc::new(Mesh {
+            vertices: vec![
+                Point3 {
+                    x: 0f64,
+                    y: 0f64,
+                    z: 0f64,
+                },
+                Point3 {
+                    x: 0f64,
+                    y: 2f64,
+                    z: 0f64,
+                },
+                Point3 {
+                    x: 2f64,
+                    y: 0f64,
+                    z: 0f64,
+                },
+            ],
+            texture_mapping: vec![],
+            normals: vec![],
+            triangles: vec![MeshPlainTriangle {
+                vertex_a: MeshVertex {
+                    vertex_index: 0,
+                    normal_index: 0,
+                    texture_index: 0,
+                },
+                vertex_b: MeshVertex {
+                    vertex_index: 1,
+                    normal_index: 0,
+                    texture_index: 0,
+                },
+                vertex_c: MeshVertex {
+                    vertex_index: 2,
+                    normal_index: 0,
+                    texture_index: 0,
+                },
+            }],
+        });
+        let ray = Ray {
+            origin: Point3 {
+                x: 0.5f64,
+                y: 0.5f64,
+                z: -4f64,
+            },
+            direction: Vector3 {
+                x: 0f64,
+                y: 0f64,
+                z: 1f64,
+            },
+        };
+
+        let mesh_triangles = get_triangles(mesh);
+        let intersection = mesh_triangles[0].intersect(&ray);
         assert_eq!(intersection.is_some(), true);
         assert_eq!(intersection.unwrap(), 4f64);
     }
