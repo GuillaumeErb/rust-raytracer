@@ -104,6 +104,10 @@ impl Intersectable for MeshTriangle {
         }
 
         let t = v0v2.dot(&qvec) * inv_det;
+        if t < 0f64 {
+            return None;
+        }
+        //println!("Distance {:?}", t);
 
         Some(Intersection {
             distance: t,

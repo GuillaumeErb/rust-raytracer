@@ -36,7 +36,7 @@ impl SceneIntersection<'_> {
             Some(uv) => {
                 // kind of clumsy, but I don't want to recompute uv ...
                 match &self.object.geometry {
-                    Object::MeshTriangle(triangle) => get_triangle_normal(triangle, uv),
+                    Object::MeshTriangle(triangle) => get_triangle_normal(triangle, &uv, point),
                     _ => self.object.geometry.get_normal(point),
                 }
             }
@@ -54,6 +54,7 @@ pub fn render(scene: &Scene) -> HashMap<(u16, u16), Color> {
     let now = Instant::now();
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
+        //.iter()
         .par_iter()
         .map(|view_ray| {
             let mut traced_ray = TracedRay {
@@ -76,6 +77,7 @@ pub fn is_in_shadow(point: &Point3, light: &Light, scene: &Scene) -> bool {
         direction: light_direction.times(-1f64),
     };
 
+    //println!("Shadow");
     scene
         .objects
         .iter()

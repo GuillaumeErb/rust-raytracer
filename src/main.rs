@@ -22,9 +22,9 @@ use texture::*;
 use std::f64::consts::PI;
 
 fn main() -> Result<(), String> {
-    let mut scene = get_mesh();
+    let mut scene = get_simple_mesh();
 
-    let mode = 0i8;
+    let mode = 2i8;
     match mode {
         0 => render_scene_console(&mut scene)?,
         1 => render_scene_file(&mut scene)?,
@@ -32,6 +32,155 @@ fn main() -> Result<(), String> {
     }
 
     Ok(())
+}
+
+fn get_simple_mesh() -> Scene {
+    let mut objects: Vec<SceneObject> = vec![];
+    let mesh = Arc::new(parser::parse_obj("res/diamond.obj".to_string()));
+    let mut id: usize = 0;
+    for triangle in geometry::get_triangles(mesh) {
+        objects.push(SceneObject {
+            id: id,
+            geometry: Object::MeshTriangle(triangle),
+            material: Material {
+                ambient_color: Coloration::Color(Color {
+                    red: 1f64,
+                    green: 0f64,
+                    blue: 0f64,
+                }),
+                ambient_reflection: 0.3f64,
+                diffuse_color: Coloration::Color(Color {
+                    red: 0f64,
+                    green: 0f64,
+                    blue: 1f64,
+                }),
+                diffuse_reflection: 0.7f64,
+                specular_color: Coloration::Color(BLACK),
+                specular_reflection: 0f64,
+                shininess: 0f64,
+                reflectivity: 0f64,
+                transparency: 0f64,
+                index_of_refraction: 0f64,
+            },
+        });
+        id += 1;
+    }
+    objects.push(SceneObject {
+        id: id,
+        geometry: Object::Sphere(Sphere {
+            center: Point3 {
+                x: 0f64,
+                y: -120f64,
+                z: 0f64,
+            },
+            radius: 70f64,
+        }),
+        material: Material {
+            ambient_color: Coloration::Color(Color {
+                red: 1f64,
+                green: 0f64,
+                blue: 0f64,
+            }),
+            ambient_reflection: 0.3f64,
+            diffuse_color: Coloration::Color(Color {
+                red: 0f64,
+                green: 0f64,
+                blue: 1f64,
+            }),
+            diffuse_reflection: 0.7f64,
+            specular_color: Coloration::Color(BLACK),
+            specular_reflection: 0f64,
+            shininess: 0f64,
+            reflectivity: 0f64,
+            transparency: 0f64,
+            index_of_refraction: 0f64,
+        },
+    });
+    objects.push(SceneObject {
+        id: id,
+        geometry: Object::Sphere(Sphere {
+            center: Point3 {
+                x: 120f64,
+                y: 0f64,
+                z: 0f64,
+            },
+            radius: 70f64,
+        }),
+        material: Material {
+            ambient_color: Coloration::Color(Color {
+                red: 1f64,
+                green: 0f64,
+                blue: 0f64,
+            }),
+            ambient_reflection: 0.3f64,
+            diffuse_color: Coloration::Color(Color {
+                red: 0f64,
+                green: 0f64,
+                blue: 1f64,
+            }),
+            diffuse_reflection: 0.7f64,
+            specular_color: Coloration::Color(BLACK),
+            specular_reflection: 0f64,
+            shininess: 0f64,
+            reflectivity: 0f64,
+            transparency: 0f64,
+            index_of_refraction: 0f64,
+        },
+    });
+    id += 1;
+    let mut lights: Vec<Light> = vec![];
+    lights.push(Light::DirectionalLight(DirectionalLight {
+        direction: Vector3 {
+            x: 1f64,
+            y: 0f64,
+            z: 0f64,
+        }
+        .normalize(),
+        intensity: 1f64,
+        color: Color {
+            red: 1f64,
+            green: 1f64,
+            blue: 1f64,
+        },
+    }));
+
+    let ambient_light = AmbientLight {
+        color: Color {
+            red: 1f64,
+            green: 1f64,
+            blue: 1f64,
+        },
+        intensity: 1f64,
+    };
+
+    let standard_camera = Camera {
+        position: Point3 {
+            x: 0f64,
+            y: -50f64,
+            z: -150f64,
+        },
+        direction: Vector3 {
+            x: 0f64,
+            y: 0f64,
+            z: 1f64,
+        }
+        .normalize(),
+        up_direction: Vector3 {
+            x: 0f64,
+            y: 1f64,
+            z: 0f64,
+        },
+        field_of_view: PI / 2f64,
+        x_resolution: 200u16,
+        y_resolution: 200u16,
+    };
+
+    Scene {
+        objects: objects,
+        lights: lights,
+        ambient_light: ambient_light,
+        camera: standard_camera,
+    }
 }
 
 fn get_mesh() -> Scene {

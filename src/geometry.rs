@@ -158,7 +158,11 @@ pub fn get_triangles<'a>(mesh: Arc<Mesh>) -> Vec<MeshTriangle> {
     result
 }
 
-pub fn get_triangle_normal(triangle_mesh: &MeshTriangle, uv: Point2) -> Vector3 {
+pub fn get_triangle_normal(triangle_mesh: &MeshTriangle, uv: &Point2, point: &Point3) -> Vector3 {
+    if triangle_mesh.mesh.normals.is_empty() {
+        return triangle_mesh.get_normal(point);
+    }
+
     let triangle = &triangle_mesh.mesh.triangles[triangle_mesh.triangle_index];
     let n0 = triangle_mesh.mesh.normals[triangle.vertex_a.normal_index];
     let n1 = triangle_mesh.mesh.normals[triangle.vertex_b.normal_index];
@@ -180,7 +184,7 @@ impl MeshTriangle {
 
         let ab = &b - &a;
         let ac = &c - &a;
-        let normal = ab.cross(&ac).normalize();
+        let normal = ac.cross(&ab).normalize();
         normal
     }
 }

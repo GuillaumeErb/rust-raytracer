@@ -16,7 +16,7 @@ pub fn parse_obj(filename: String) -> Mesh {
             continue;
         }
         let line = line.unwrap();
-        let splitted: Vec<_> = line.split(' ').collect();
+        let splitted: Vec<_> = line.split_whitespace().collect();
         if splitted.len() == 0 {
             continue;
         }
@@ -74,8 +74,16 @@ pub fn parse_triangle(line: Vec<&str>) -> MeshPlainTriangle {
 fn parse_face_vertex(raw_vertex: &str) -> MeshVertex {
     let splitted: Vec<_> = raw_vertex.split('/').collect();
     let vertex = splitted[0].parse::<usize>().unwrap();
-    let texture = splitted[1].parse::<usize>().unwrap();
-    let normal = splitted[2].parse::<usize>().unwrap();
+    let texture = if splitted.len() > 1 {
+        splitted[1].parse::<usize>().unwrap()
+    } else {
+        1
+    };
+    let normal = if splitted.len() > 2 {
+        splitted[2].parse::<usize>().unwrap()
+    } else {
+        1
+    };
 
     MeshVertex {
         vertex_index: vertex - 1,
