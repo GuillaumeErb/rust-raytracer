@@ -1,9 +1,9 @@
-use crate::camera::{Camera, GeneratingViewRays};
-use crate::color::{Color, BLACK};
-use crate::geometry::{Object, Point3, Ray};
-use crate::intersectable::Intersectable;
-use crate::light::{AmbientLight, Light};
-use crate::material::Material;
+use crate::camera::*;
+use crate::color::*;
+use crate::geometry::*;
+use crate::intersectable::*;
+use crate::light::*;
+use crate::material::*;
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::time::Instant;
@@ -25,9 +25,24 @@ pub struct Scene {
     pub camera: Camera,
 }
 
-pub struct Intersection<'a> {
-    pub distance: f64,
+pub struct SceneIntersection<'a> {
+    pub intersection: Intersection,
     pub object: &'a SceneObject,
+}
+
+impl SceneIntersection<'_> {
+    pub fn get_normal(&self, point: &Point3) -> Vector3 {
+        match self.intersection.triangle_u_v {
+            Some(uv) => {
+                // kind of clumsy, but I don't want to recompute uv ...
+                match &self.object.geometry {
+                    Object::MeshTriangle(triangle) => get_triangle_normal(triangle, uv),
+                    _ => self.object.geometry.get_normal(point),
+                }
+            }
+            None => self.object.geometry.get_normal(point),
+        }
+    }
 }
 
 pub struct TracedRay {
@@ -76,12 +91,17 @@ pub fn cast_ray(scene: &Scene, ray: &TracedRay, max_bounces: u8) -> Color {
             object
                 .geometry
                 .intersect(&ray.ray)
-                .map(|distance| Intersection {
-                    distance: distance,
+                .map(|intersection| SceneIntersection {
+                    intersection: intersection,
                     object: &object,
                 })
         })
-        .min_by(|i1, i2| i1.distance.partial_cmp(&i2.distance).unwrap());
+        .min_by(|i1, i2| {
+            i1.intersection
+                .distance
+                .partial_cmp(&i2.intersection.distance)
+                .unwrap()
+        });
 
     intersection
         .map(|i| {

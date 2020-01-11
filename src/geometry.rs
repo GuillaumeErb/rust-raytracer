@@ -8,6 +8,7 @@ pub struct Point3 {
     pub z: f64,
 }
 
+#[allow(dead_code)]
 pub const POINT3_ORIGIN: Point3 = Point3 {
     x: 0f64,
     y: 0f64,
@@ -108,7 +109,7 @@ impl Object {
         match *self {
             Object::Sphere(ref mut obj) => obj.center = obj.center.add(vector),
             Object::Plane(ref mut obj) => obj.point = obj.point.add(vector),
-            Object::MeshTriangle(ref mut obj) => (),
+            Object::MeshTriangle(ref mut _obj) => (),
         }
     }
 }
@@ -157,8 +158,20 @@ pub fn get_triangles<'a>(mesh: Arc<Mesh>) -> Vec<MeshTriangle> {
     result
 }
 
+pub fn get_triangle_normal(triangle_mesh: &MeshTriangle, uv: Point2) -> Vector3 {
+    let triangle = &triangle_mesh.mesh.triangles[triangle_mesh.triangle_index];
+    let n0 = triangle_mesh.mesh.normals[triangle.vertex_a.normal_index];
+    let n1 = triangle_mesh.mesh.normals[triangle.vertex_b.normal_index];
+    let n2 = triangle_mesh.mesh.normals[triangle.vertex_c.normal_index];
+
+    let u = uv.x;
+    let v = uv.y;
+
+    n1.times(u).plus(&n2.times(v)).plus(&n0.times(1f64 - u - v))
+}
+
 impl MeshTriangle {
-    pub fn get_normal(&self, point: &Point3) -> Vector3 {
+    pub fn get_normal(&self, _point: &Point3) -> Vector3 {
         let triangle = &self.mesh.triangles[self.triangle_index];
 
         let a = self.mesh.vertices[triangle.vertex_a.vertex_index];
@@ -167,16 +180,8 @@ impl MeshTriangle {
 
         let ab = &b - &a;
         let ac = &c - &a;
-        let ap = point - &a;
-
-        let ab_point = ab.dot(&ap);
-        let ac_point = ac.dot(&ap);
-
-        let a_n = self.mesh.normals[triangle.vertex_a.normal_index];
-        let b_n = self.mesh.normals[triangle.vertex_b.normal_index];
-        let c_n = self.mesh.normals[triangle.vertex_c.normal_index];
-
-        a_n
+        let normal = ab.cross(&ac).normalize();
+        normal
     }
 }
 

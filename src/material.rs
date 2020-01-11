@@ -1,5 +1,5 @@
 use crate::color::{Color, BLACK};
-use crate::engine::{cast_ray, is_in_shadow, Intersection, Scene, TracedRay};
+use crate::engine::{cast_ray, is_in_shadow, Scene, SceneIntersection, TracedRay};
 use crate::geometry::{Object, Point3, Ray, Vector3};
 use crate::texture::Texture;
 use std::mem::swap;
@@ -37,15 +37,15 @@ impl Material {
     pub fn render_color(
         &self,
         ray: &TracedRay,
-        intersection: &Intersection,
+        intersection: &SceneIntersection,
         scene: &Scene,
         max_bounces: u8,
     ) -> Color {
         let point_precise = ray
             .ray
             .origin
-            .add(&ray.ray.direction.times(intersection.distance));
-        let normal = intersection.object.geometry.get_normal(&point_precise);
+            .add(&ray.ray.direction.times(intersection.intersection.distance));
+        let normal = intersection.get_normal(&point_precise);
         let point = point_precise.add(&normal.times(1e-6));
 
         let mut rendered_color = &(&scene.ambient_light.color
@@ -63,6 +63,7 @@ impl Material {
             let to_eye = ray.ray.direction.times(-1f64);
             let light_normal_reflection = to_light.symmetry(&normal);
             let diffuse = self.diffuse_reflection * normal.dot(to_light).max(0f64);
+
             let specular = self.specular_reflection
                 * (&light_normal_reflection.dot(&to_eye).max(0f64)).powf(self.shininess);
 
@@ -119,7 +120,7 @@ impl Material {
                 };
                 let refracted_direction = refract(
                     &ray.ray.direction,
-                    &normal,    
+                    &normal,
                     self.index_of_refraction,
                     outside_index_of_refraction,
                 );

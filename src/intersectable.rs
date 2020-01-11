@@ -1,21 +1,18 @@
-use crate::geometry::get_triangles;
-use crate::geometry::Mesh;
-use crate::geometry::MeshPlainTriangle;
-use crate::geometry::MeshTriangle;
-use crate::geometry::MeshVertex;
-use crate::geometry::Object;
-use crate::geometry::Plane;
-use crate::geometry::Ray;
-use crate::geometry::Sphere;
-use crate::geometry::POINT3_ORIGIN;
+use crate::geometry::*;
 use std::sync::Arc;
 
+#[derive(Clone)]
+pub struct Intersection {
+    pub distance: f64,
+    pub triangle_u_v: Option<Point2>,
+}
+
 pub trait Intersectable {
-    fn intersect(&self, ray: &Ray) -> Option<f64>;
+    fn intersect(&self, ray: &Ray) -> Option<Intersection>;
 }
 
 impl Intersectable for Object {
-    fn intersect(&self, ray: &Ray) -> Option<f64> {
+    fn intersect(&self, ray: &Ray) -> Option<Intersection> {
         match self {
             Object::Sphere(ref obj) => obj.intersect(ray),
             Object::Plane(ref obj) => obj.intersect(ray),
@@ -25,7 +22,7 @@ impl Intersectable for Object {
 }
 
 impl Intersectable for Sphere {
-    fn intersect(&self, ray: &Ray) -> Option<f64> {
+    fn intersect(&self, ray: &Ray) -> Option<Intersection> {
         let l = &self.center - &ray.origin;
         let adj = l.dot(&ray.direction);
         let d2 = l.dot(&l) - (adj * adj);
@@ -37,28 +34,35 @@ impl Intersectable for Sphere {
         let t0 = adj - thc;
         let t1 = adj + thc;
 
+        let distance;
         if t0 < 0.0 && t1 < 0.0 {
-            None
+            return None;
         } else if t0 < 0.0 {
-            Some(t1)
+            distance = t1;
         } else if t1 < 0.0 {
-            Some(t0)
+            distance = t0;
         } else {
-            let distance = if t0 < t1 { t0 } else { t1 };
-            Some(distance)
+            distance = if t0 < t1 { t0 } else { t1 };
         }
+        Some(Intersection {
+            distance: distance,
+            triangle_u_v: None,
+        })
     }
 }
 
 impl Intersectable for Plane {
-    fn intersect(&self, ray: &Ray) -> Option<f64> {
+    fn intersect(&self, ray: &Ray) -> Option<Intersection> {
         let normal = &self.normal;
         let denom = normal.dot(&ray.direction);
         if denom.abs() > 1e-6 {
             let v = &self.point - &ray.origin;
             let distance = v.dot(&normal) / denom;
             if distance >= 0.0 {
-                return Some(distance);
+                return Some(Intersection {
+                    distance: distance,
+                    triangle_u_v: None,
+                });
             }
         }
         None
@@ -67,7 +71,7 @@ impl Intersectable for Plane {
 
 impl Intersectable for MeshTriangle {
     // Moller Trumbore algorithm
-    fn intersect(&self, ray: &Ray) -> Option<f64> {
+    fn intersect(&self, ray: &Ray) -> Option<Intersection> {
         let triangle = &self.mesh.triangles[self.triangle_index];
         let v0 = &self.mesh.vertices[triangle.vertex_a.vertex_index];
         let v1 = &self.mesh.vertices[triangle.vertex_b.vertex_index];
@@ -101,7 +105,10 @@ impl Intersectable for MeshTriangle {
 
         let t = v0v2.dot(&qvec) * inv_det;
 
-        Some(t)
+        Some(Intersection {
+            distance: t,
+            triangle_u_v: Some(Point2 { x: u, y: v }),
+        })
     }
 }
 
@@ -134,7 +141,7 @@ mod tests {
         };
         let intersection = sphere.intersect(&ray);
         assert_eq!(intersection.is_some(), true);
-        assert_eq!(intersection.unwrap(), 6f64);
+        assert_eq!(intersection.unwrap().distance, 6f64);
     }
 
     #[test]
@@ -187,7 +194,7 @@ mod tests {
         };
         let intersection = sphere.intersect(&ray);
         assert_eq!(intersection.is_some(), true);
-        assert_eq!(intersection.unwrap(), 4f64);
+        assert_eq!(intersection.unwrap().distance, 4f64);
     }
 
     #[test]
@@ -246,6 +253,6 @@ mod tests {
         let mesh_triangles = get_triangles(mesh);
         let intersection = mesh_triangles[0].intersect(&ray);
         assert_eq!(intersection.is_some(), true);
-        assert_eq!(intersection.unwrap(), 4f64);
+        assert_eq!(intersection.unwrap().distance, 4f64);
     }
 }

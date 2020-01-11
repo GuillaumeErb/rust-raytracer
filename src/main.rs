@@ -9,22 +9,22 @@ mod parser;
 mod renderer;
 mod texture;
 
-use camera::Camera;
-use color::{Color, BLACK, WHITE};
-use engine::{Scene, SceneObject};
-use geometry::{Object, Plane, Point3, Sphere, Vector3, POINT2_ORIGIN};
-use light::{AmbientLight, DirectionalLight, Light, Point3Light};
-use material::{Coloration, Material};
-use renderer::{render_scene_console, render_scene_file, render_scene_sdl2};
+use camera::*;
+use color::*;
+use engine::*;
+use geometry::*;
+use light::*;
+use material::*;
+use renderer::*;
 use std::sync::Arc;
-use texture::{get_checkboard, Texture};
+use texture::*;
 
 use std::f64::consts::PI;
 
 fn main() -> Result<(), String> {
     let mut scene = get_mesh();
 
-    let mode = 9i8;
+    let mode = 0i8;
     match mode {
         0 => render_scene_console(&mut scene)?,
         1 => render_scene_file(&mut scene)?,
@@ -48,13 +48,13 @@ fn get_mesh() -> Scene {
                     green: 0f64,
                     blue: 0f64,
                 }),
-                ambient_reflection: 0.6f64,
+                ambient_reflection: 0.3f64,
                 diffuse_color: Coloration::Color(Color {
                     red: 0f64,
                     green: 0f64,
                     blue: 1f64,
                 }),
-                diffuse_reflection: 0.4f64,
+                diffuse_reflection: 0.7f64,
                 specular_color: Coloration::Color(BLACK),
                 specular_reflection: 0f64,
                 shininess: 0f64,
@@ -67,6 +67,20 @@ fn get_mesh() -> Scene {
     }
 
     let mut lights: Vec<Light> = vec![];
+    lights.push(Light::DirectionalLight(DirectionalLight {
+        direction: Vector3 {
+            x: 0.5f64,
+            y: -1f64,
+            z: -0.3f64,
+        }
+        .normalize(),
+        intensity: 1f64,
+        color: Color {
+            red: 1f64,
+            green: 1f64,
+            blue: 1f64,
+        },
+    }));
 
     let ambient_light = AmbientLight {
         color: Color {
@@ -79,23 +93,24 @@ fn get_mesh() -> Scene {
 
     let standard_camera = Camera {
         position: Point3 {
-            x: 0f64,
-            y: 0f64,
-            z: -5f64,
+            x: 1f64,
+            y: -0.05f64,
+            z: 5f64,
         },
         direction: Vector3 {
-            x: 0f64,
+            x: -0.2f64,
             y: 0f64,
-            z: 1f64,
-        },
+            z: -1f64,
+        }
+        .normalize(),
         up_direction: Vector3 {
             x: 0f64,
             y: 1f64,
             z: 0f64,
         },
         field_of_view: PI / 4f64,
-        x_resolution: 300u16,
-        y_resolution: 300u16,
+        x_resolution: 48u16,
+        y_resolution: 26u16,
     };
 
     Scene {
@@ -106,6 +121,7 @@ fn get_mesh() -> Scene {
     }
 }
 
+#[allow(dead_code)]
 fn get_transparent_sphere_in_sphere() -> Scene {
     let mut objects: Vec<SceneObject> = vec![];
     objects.push(SceneObject {
@@ -186,7 +202,7 @@ fn get_transparent_sphere_in_sphere() -> Scene {
             index_of_refraction: 1.33f64,
         },
     });
-    let mut lights: Vec<Light> = vec![];
+    let lights: Vec<Light> = vec![];
 
     let ambient_light = AmbientLight {
         color: Color {
@@ -226,6 +242,7 @@ fn get_transparent_sphere_in_sphere() -> Scene {
     }
 }
 
+#[allow(dead_code)]
 fn get_spheres_with_plane() -> Scene {
     let mut objects: Vec<SceneObject> = vec![];
     objects.push(SceneObject {
