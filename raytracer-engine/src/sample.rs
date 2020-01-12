@@ -1,44 +1,21 @@
-mod camera;
-mod color;
-mod engine;
-mod geometry;
-mod intersectable;
-mod light;
-mod material;
-mod parser;
-mod renderer;
-mod texture;
-
-use camera::*;
-use color::*;
-use engine::*;
-use geometry::*;
-use light::*;
-use material::*;
-use renderer::*;
+use crate::camera::*;
+use crate::color::*;
+use crate::engine::*;
+use crate::geometry::*;
+use crate::light::*;
+use crate::material::*;
+use crate::parser::*;
+use crate::texture::*;
 use std::sync::Arc;
-use texture::*;
 
 use std::f64::consts::PI;
 
-fn main() -> Result<(), String> {
-    let mut scene = get_simple_mesh();
-
-    let mode = 2i8;
-    match mode {
-        0 => render_scene_console(&mut scene)?,
-        1 => render_scene_file(&mut scene)?,
-        _ => render_scene_sdl2(&mut scene)?,
-    }
-
-    Ok(())
-}
-
-fn get_simple_mesh() -> Scene {
+#[allow(dead_code)]
+pub fn get_simple_mesh() -> Scene {
     let mut objects: Vec<SceneObject> = vec![];
-    let mesh = Arc::new(parser::parse_obj("res/diamond.obj".to_string()));
+    let mesh = Arc::new(parse_obj("../res/diamond.obj".to_string()));
     let mut id: usize = 0;
-    for triangle in geometry::get_triangles(mesh) {
+    for triangle in get_triangles(mesh) {
         objects.push(SceneObject {
             id: id,
             geometry: Object::MeshTriangle(triangle),
@@ -127,7 +104,7 @@ fn get_simple_mesh() -> Scene {
             index_of_refraction: 0f64,
         },
     });
-    id += 1;
+
     let mut lights: Vec<Light> = vec![];
     lights.push(Light::DirectionalLight(DirectionalLight {
         direction: Vector3 {
@@ -183,11 +160,12 @@ fn get_simple_mesh() -> Scene {
     }
 }
 
-fn get_mesh() -> Scene {
+#[allow(dead_code)]
+pub fn get_mesh() -> Scene {
     let mut objects: Vec<SceneObject> = vec![];
-    let mesh = Arc::new(parser::parse_obj("res/suzanne.obj".to_string()));
+    let mesh = Arc::new(parse_obj("../res/suzanne.obj".to_string()));
     let mut id: usize = 0;
-    for triangle in geometry::get_triangles(mesh) {
+    for triangle in get_triangles(mesh) {
         objects.push(SceneObject {
             id: id,
             geometry: Object::MeshTriangle(triangle),
@@ -258,8 +236,8 @@ fn get_mesh() -> Scene {
             z: 0f64,
         },
         field_of_view: PI / 4f64,
-        x_resolution: 48u16,
-        y_resolution: 26u16,
+        x_resolution: 480u16,
+        y_resolution: 260u16,
     };
 
     Scene {
@@ -271,7 +249,7 @@ fn get_mesh() -> Scene {
 }
 
 #[allow(dead_code)]
-fn get_transparent_sphere_in_sphere() -> Scene {
+pub fn get_transparent_sphere_in_sphere() -> Scene {
     let mut objects: Vec<SceneObject> = vec![];
     objects.push(SceneObject {
         id: 0,
@@ -392,7 +370,7 @@ fn get_transparent_sphere_in_sphere() -> Scene {
 }
 
 #[allow(dead_code)]
-fn get_spheres_with_plane() -> Scene {
+pub fn get_spheres_with_plane() -> Scene {
     let mut objects: Vec<SceneObject> = vec![];
     objects.push(SceneObject {
         id: 0,

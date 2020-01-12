@@ -119,8 +119,7 @@ impl Intersectable for MeshTriangle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Point3;
-    use crate::Vector3;
+
     #[test]
     fn sphere_intersection() {
         let sphere = Sphere {

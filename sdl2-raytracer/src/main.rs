@@ -1,58 +1,17 @@
-use crate::color::Color;
-use crate::engine::render;
-use crate::engine::Scene;
-use crate::geometry::Object;
-use crate::geometry::Vector3;
+use raytracer_engine::color::Color;
+use raytracer_engine::geometry::Vector3;
+use raytracer_engine::geometry::Object;
+use raytracer_engine::engine::render;
+use raytracer_engine::engine::Scene;
+use raytracer_engine::sample::*;
+
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
-#[allow(unused)]
-pub fn render_scene_console(scene: &Scene) -> Result<(), String> {
-    let screen = render(scene);
-    for y in 0..scene.camera.y_resolution {
-        for x in 0..scene.camera.x_resolution {
-            let ansi_color: ansi_term::Color = screen[&(x, y)].into();
-            print!("{}", ansi_color.paint("█"));
-        }
-        println!();
-    }
+fn main() -> Result<(), String> {
+    let mut scene = get_mesh();
+    render_scene_sdl2(&mut scene)?;
     Ok(())
-}
-
-impl From<Color> for ansi_term::Color {
-    fn from(item: Color) -> Self {
-        ansi_term::Color::RGB(
-            (item.red * 255f64).round() as u8,
-            (item.green * 255f64).round() as u8,
-            (item.blue * 255f64).round() as u8,
-        )
-    }
-}
-
-#[allow(unused)]
-pub fn render_scene_file(scene: &Scene) -> Result<(), String> {
-    let screen = render(scene);
-    let mut imgbuf: image::RgbImage = image::ImageBuffer::new(
-        scene.camera.x_resolution as u32,
-        scene.camera.y_resolution as u32,
-    );
-
-    for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
-        *pixel = screen[&(x as u16, y as u16)].into();
-    }
-    imgbuf.save("output.png").unwrap();
-
-    Ok(())
-}
-
-impl From<Color> for image::Rgb<u8> {
-    fn from(item: Color) -> Self {
-        image::Rgb([
-            ((item.red as f32) * 255.0) as u8,
-            ((item.green as f32) * 255.0) as u8,
-            ((item.blue as f32) * 255.0) as u8,
-        ])
-    }
 }
 
 pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
@@ -195,7 +154,7 @@ pub fn render_frame_scene_sdl2(
             texture_canvas.clear();
             for x in 0..scene.camera.x_resolution {
                 for y in 0..scene.camera.y_resolution {
-                    let sdl2_color: sdl2::pixels::Color = screen[&(x, y)].into();
+                    let sdl2_color: sdl2::pixels::Color = color_to_sdl2(screen[&(x, y)]);
                     texture_canvas.set_draw_color(sdl2_color);
                     texture_canvas
                         .draw_point(sdl2::rect::Point::new(x as i32, y as i32))
@@ -216,12 +175,10 @@ pub fn render_frame_scene_sdl2(
     Ok(())
 }
 
-impl From<Color> for sdl2::pixels::Color {
-    fn from(item: Color) -> Self {
-        sdl2::pixels::Color::RGB(
-            ((item.red as f32) * 255.0) as u8,
-            ((item.green as f32) * 255.0) as u8,
-            ((item.blue as f32) * 255.0) as u8,
-        )
-    }
+fn color_to_sdl2(item: Color) -> sdl2::pixels::Color {
+    sdl2::pixels::Color::RGB(
+        ((item.red as f32) * 255.0) as u8,
+        ((item.green as f32) * 255.0) as u8,
+        ((item.blue as f32) * 255.0) as u8,
+    )
 }
