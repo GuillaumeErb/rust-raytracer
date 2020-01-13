@@ -1,7 +1,7 @@
 import { memory } from "wasm-raytracer/wasm_raytracer_bg";
 import { Screen } from "wasm-raytracer";
 
-const PIXEL_SIZE = 6; // px
+const PIXEL_SIZE = 1; // px
 
 const screen = Screen.new();
 const width = screen.width();
