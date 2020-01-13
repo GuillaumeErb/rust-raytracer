@@ -37,5 +37,25 @@ const render = () => {
     }
 };
 
+canvas.addEventListener("click", event => {
+    const boundingRect = canvas.getBoundingClientRect();
+
+    const scaleX = canvas.width / boundingRect.width;
+    const scaleY = canvas.height / boundingRect.height;
+
+    const canvasLeft = (event.clientX - boundingRect.left) * scaleX;
+    const canvasTop = (event.clientY - boundingRect.top) * scaleY;
+
+    const row = Math.min(Math.floor(canvasTop / PIXEL_SIZE), height);
+    const col = Math.min(Math.floor(canvasLeft / PIXEL_SIZE), width);
+
+    screen.click(row, col);
+});
+
+document.addEventListener('keydown', function (event) {
+    screen.keydown(event.keyCode);
+    render();
+});
+
 screen.render();
 render();

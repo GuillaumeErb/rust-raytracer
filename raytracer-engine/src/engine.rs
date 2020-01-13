@@ -77,7 +77,6 @@ pub fn is_in_shadow(point: &Point3, light: &Light, scene: &Scene) -> bool {
         direction: light_direction.times(-1f64),
     };
 
-    //println!("Shadow");
     scene
         .objects
         .iter()
@@ -86,7 +85,21 @@ pub fn is_in_shadow(point: &Point3, light: &Light, scene: &Scene) -> bool {
 }
 
 pub fn cast_ray(scene: &Scene, ray: &TracedRay, max_bounces: u8) -> Color {
-    let intersection = scene
+    get_closest_intersection(scene, ray, max_bounces)
+        .map(|i| {
+            (*i.object)
+                .material
+                .render_color(ray, &i, &scene, max_bounces)
+        })
+        .unwrap_or(BLACK)
+}
+
+fn get_closest_intersection<'a>(
+    scene: &'a Scene,
+    ray: &TracedRay,
+    max_bounces: u8,
+) -> Option<SceneIntersection<'a>> {
+    scene
         .objects
         .iter()
         .filter_map(|object| {
@@ -103,13 +116,21 @@ pub fn cast_ray(scene: &Scene, ray: &TracedRay, max_bounces: u8) -> Color {
                 .distance
                 .partial_cmp(&i2.intersection.distance)
                 .unwrap()
-        });
-
-    intersection
-        .map(|i| {
-            (*i.object)
-                .material
-                .render_color(ray, &i, &scene, max_bounces)
         })
-        .unwrap_or(BLACK)
+}
+
+pub fn get_object<'a>(scene: &'a Scene, x: u16, y: u16) -> Option<usize> {
+    let ray = scene.camera.get_ray(x, y);
+    let intersection = get_closest_intersection(
+        scene,
+        &TracedRay {
+            ray: ray,
+            inside_objects: vec![],
+        },
+        0u8,
+    );
+    match intersection {
+        Some(x) => Some(x.object.id),
+        None => None,
+    }
 }

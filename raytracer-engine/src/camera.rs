@@ -17,14 +17,8 @@ pub struct ViewRay {
     pub ray: Ray,
 }
 
-pub trait GeneratingViewRays {
-    fn generate_viewport(&self) -> Vec<ViewRay>;
-}
-
-impl GeneratingViewRays for Camera {
-    fn generate_viewport(&self) -> Vec<ViewRay> {
-        let mut view_rays: Vec<ViewRay> = vec![];
-
+impl Camera {
+    fn get_origin_and_sizes(&self) -> (Vector3, Vector3, Vector3) {
         let t_n = self.direction.normalize();
         let b_n = self.direction.cross(&self.up_direction).normalize();
         let v_n = t_n.cross(&b_n);
@@ -35,6 +29,27 @@ impl GeneratingViewRays for Camera {
         let p_1_m = t_n
             .minus(&b_n.times(1f64 * g_x))
             .minus(&v_n.times(1f64 * g_y));
+
+        (p_1_m, q_x, q_y)
+    }
+
+    pub fn get_ray(&self, x: u16, y: u16) -> Ray {
+        let (p_1_m, q_x, q_y) = self.get_origin_and_sizes();
+
+        let p = p_1_m
+            .plus(&q_x.times((x as f64) + 1f64))
+            .plus(&q_y.times((y as f64) + 1f64));
+
+        Ray {
+            origin: self.position,
+            direction: p.normalize(),
+        }
+    }
+
+    pub fn generate_viewport(&self) -> Vec<ViewRay> {
+        let mut view_rays: Vec<ViewRay> = vec![];
+
+        let (p_1_m, q_x, q_y) = self.get_origin_and_sizes();
 
         for x in 0..self.x_resolution {
             for y in 0..self.y_resolution {

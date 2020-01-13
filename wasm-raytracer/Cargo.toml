@@ -12,6 +12,7 @@ default = ["console_error_panic_hook"]
 
 [dependencies]
 wasm-bindgen = "0.2"
+keycodes = "0.1.0"
 raytracer_engine = { path = "../raytracer-engine" }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
