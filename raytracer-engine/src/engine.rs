@@ -57,17 +57,21 @@ pub fn render(scene: &Scene) -> HashMap<(u16, u16), Color> {
         .iter()
         //.par_iter()
         .map(|view_ray| {
-            let mut traced_ray = TracedRay {
-                ray: view_ray.ray.clone(),
-                inside_objects: vec![],
-            };
             let coordinates = (view_ray.x, view_ray.y);
-            let result = cast_ray(&scene, &mut traced_ray, MAX_BOUNCES);
+            let result = render_pixel(scene, view_ray.ray.clone());
             (coordinates, result)
         })
         .collect();
     //println!("{}", now.elapsed().as_millis());
     screen
+}
+
+pub fn render_pixel(scene: &Scene, ray: Ray) -> Color {
+    let mut traced_ray = TracedRay {
+        ray: ray,
+        inside_objects: vec![],
+    };
+    cast_ray(&scene, &mut traced_ray, MAX_BOUNCES)
 }
 
 pub fn is_in_shadow(point: &Point3, light: &Light, scene: &Scene) -> bool {

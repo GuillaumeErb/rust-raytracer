@@ -17,25 +17,42 @@ const getIndex = (row, column) => {
     return (row * width + column) * 3;
 };
 
-const render = () => {
+const paint = () => {
     const cellsPtr = screen.pixels();
     const cells = new Uint8Array(memory.buffer, cellsPtr, width * height * 3);
 
     for (let row = 0; row < height; row++) {
         for (let col = 0; col < width; col++) {
-            const idx = getIndex(row, col);
-            const r = cells[idx];
-            const g = cells[idx + 1];
-            const b = cells[idx + 2];
-
-            ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
-            ctx.fillRect(col * PIXEL_SIZE,
-                row * PIXEL_SIZE,
-                PIXEL_SIZE,
-                PIXEL_SIZE);
+            paintPixel(cells, row, col, PIXEL_SIZE);
         }
     }
 };
+
+const PIXEL_SIZE_STEPS = [64, 32, 16, 8, 4, 2, 1];
+
+const paintStep = (step) => {
+    const cellsPtr = screen.pixels();
+    const cells = new Uint8Array(memory.buffer, cellsPtr, width * height * 3);
+
+    for (let row = 0; row < height / PIXEL_SIZE_STEPS[step]; row++) {
+        for (let col = 0; col < width / PIXEL_SIZE_STEPS[step]; col++) {
+            paintPixel(cells, row, col, PIXEL_SIZE_STEPS[step]);
+        }
+    }
+};
+
+const paintPixel = (cells, row, col, pixelSize) => {
+    const idx = getIndex(row * pixelSize, col * pixelSize);
+    const r = cells[idx];
+    const g = cells[idx + 1];
+    const b = cells[idx + 2];
+
+    ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+    ctx.fillRect(col * pixelSize,
+        row * pixelSize,
+        pixelSize,
+        pixelSize);
+}
 
 canvas.addEventListener("click", event => {
     const boundingRect = canvas.getBoundingClientRect();
@@ -52,10 +69,21 @@ canvas.addEventListener("click", event => {
     screen.click(row, col);
 });
 
+var renderingStep = 0;
 document.addEventListener('keydown', function (event) {
+    renderingStep = 0;
     screen.keydown(event.keyCode);
-    render();
+    requestAnimationFrame(repeatOften);
 });
 
-screen.render();
-render();
+function repeatOften() {
+    screen.renderStep(renderingStep);
+    paintStep(renderingStep);
+    if (renderingStep++ > PIXEL_SIZE_STEPS.length - 1) {
+        return;
+    }
+    requestAnimationFrame(repeatOften);
+}
+requestAnimationFrame(repeatOften);
+//screen.render();
+
