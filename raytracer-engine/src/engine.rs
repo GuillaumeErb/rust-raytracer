@@ -89,7 +89,7 @@ pub fn is_in_shadow(point: &Point3, light: &Light, scene: &Scene) -> bool {
 }
 
 pub fn cast_ray(scene: &Scene, ray: &TracedRay, max_bounces: u8) -> Color {
-    get_closest_intersection(scene, ray, max_bounces)
+    get_closest_intersection(scene, ray)
         .map(|i| {
             (*i.object)
                 .material
@@ -101,7 +101,6 @@ pub fn cast_ray(scene: &Scene, ray: &TracedRay, max_bounces: u8) -> Color {
 fn get_closest_intersection<'a>(
     scene: &'a Scene,
     ray: &TracedRay,
-    max_bounces: u8,
 ) -> Option<SceneIntersection<'a>> {
     scene
         .objects
@@ -131,7 +130,6 @@ pub fn get_object<'a>(scene: &'a Scene, x: u16, y: u16) -> Option<usize> {
             ray: ray,
             inside_objects: vec![],
         },
-        0u8,
     );
     match intersection {
         Some(x) => Some(x.object.id),

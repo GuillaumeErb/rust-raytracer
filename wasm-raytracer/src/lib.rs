@@ -8,25 +8,37 @@ use raytracer_engine::engine::get_object;
 use raytracer_engine::engine::render;
 use raytracer_engine::engine::render_pixel;
 use raytracer_engine::engine::Scene;
-use raytracer_engine::geometry::Ray;
 use raytracer_engine::geometry::Vector3;
 use raytracer_engine::sample::*;
 
-const SUBDIVISIONS: &[usize] = &[64, 32, 16, 8, 4, 2];
-
-const NUMBEROFSUBDIVISIONS: usize = 6;
+const SUBDIVISIONS: &[usize] = &[12, 8, 6, 3, 2];
 
 fn eligible_to_step(x: usize, y: usize, step: usize) -> bool {
-    if step >= NUMBEROFSUBDIVISIONS {
-        return !eligible_to_step_for(x, y, NUMBEROFSUBDIVISIONS - 1)
-            || !eligible_to_step_for(y, x, NUMBEROFSUBDIVISIONS - 1);
+    if step >= SUBDIVISIONS.len() {
+        return eligible_to_last_step_for(x) || eligible_to_last_step_for(y);
     }
-    return eligible_to_step_for(x, y, step) || eligible_to_step_for(y, x, step);
+    return eligible_to_step_for(x, step) || eligible_to_step_for(y, step);
 }
 
-fn eligible_to_step_for(x: usize, y: usize, step: usize) -> bool {
-    SUBDIVISIONS.iter().filter(|&&div| x % div == 0).count() == NUMBEROFSUBDIVISIONS - step
-        && SUBDIVISIONS.iter().filter(|&&div| y % div == 0).count() >= NUMBEROFSUBDIVISIONS - step
+fn eligible_to_step_for(x: usize, step: usize) -> bool {
+    for (i, item) in SUBDIVISIONS.iter().enumerate() {
+        if i < step && x % item == 0 {
+            return false;
+        }
+        if i == step {
+            return x % item == 0;
+        }
+    }
+    false
+}
+
+fn eligible_to_last_step_for(x: usize) -> bool {
+    for (i, item) in SUBDIVISIONS.iter().enumerate() {
+        if x % item == 0 {
+            return false;
+        }
+    }
+    true
 }
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -99,10 +111,10 @@ impl Screen {
 
     #[wasm_bindgen(js_name = renderStep)]
     pub fn render_step(&mut self, step: usize) {
-        log!("start rendering step ...");
+        //log!("start rendering step ...");
         self.initialize_step_rendering(step);
         let step_rendering = self.step_rendering.as_mut().unwrap();
-        log!("... {} ...", step);
+        //log!("... {} ...", step);
         for view_ray in step_rendering.viewport.iter() {
             let x = view_ray.x as usize;
             let y = view_ray.y as usize;
@@ -112,18 +124,18 @@ impl Screen {
                 print_pixel(&mut self.pixels, self.width, x, y, result);
             }
         }
-        log!("done.");
+        //log!("done.");
     }
 
     pub fn render(&mut self) {
-        log!("rendering ...");
+        //log!("rendering ...");
         let screen = render(&self.scene);
         for ((xr, yr), color) in screen {
             let x = xr as usize;
             let y = yr as usize;
             print_pixel(&mut self.pixels, self.width, x, y, color);
         }
-        log!("done.");
+        //log!("done.");
     }
 
     pub fn click(&mut self, x: u16, y: u16) {

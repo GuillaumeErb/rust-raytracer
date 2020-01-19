@@ -28,7 +28,7 @@ const paint = () => {
     }
 };
 
-const PIXEL_SIZE_STEPS = [64, 32, 16, 8, 4, 2, 1];
+const PIXEL_SIZE_STEPS = [12, 8, 6, 3, 2, 1];//[64, 32, 16, 8, 4, 2, 1];
 
 const paintStep = (step) => {
     const cellsPtr = screen.pixels();
@@ -69,21 +69,33 @@ canvas.addEventListener("click", event => {
     screen.click(row, col);
 });
 
+let animationId = null;
 var renderingStep = 0;
 document.addEventListener('keydown', function (event) {
+    cancelAnimationFrame(animationId);
     renderingStep = 0;
     screen.keydown(event.keyCode);
-    requestAnimationFrame(repeatOften);
+    animationId = requestAnimationFrame(repeatOften);
 });
 
 function repeatOften() {
+    const startTime = new Date();
     screen.renderStep(renderingStep);
     paintStep(renderingStep);
     if (renderingStep++ > PIXEL_SIZE_STEPS.length - 1) {
         return;
     }
-    requestAnimationFrame(repeatOften);
+    const timeDiff = new Date() - startTime;
+    console.log("Step " + renderingStep + " " + timeDiff + " ms");
+    animationId = requestAnimationFrame(repeatOften);
 }
-requestAnimationFrame(repeatOften);
+animationId = requestAnimationFrame(repeatOften);
 //screen.render();
 
+/*
+const startTime = new Date();
+screen.render();
+paint();
+const timeDiff = new Date() - startTime;
+console.log("Step " + renderingStep + " " + timeDiff + " ms");
+*/
