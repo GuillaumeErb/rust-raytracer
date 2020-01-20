@@ -28,7 +28,7 @@ const paint = () => {
     }
 };
 
-const PIXEL_SIZE_STEPS = [12, 8, 6, 3, 2, 1];//[64, 32, 16, 8, 4, 2, 1];
+const PIXEL_SIZE_STEPS = [13, 11, 9, 7, 5, 4, 3, 2, 1];
 
 const paintStep = (step) => {
     const cellsPtr = screen.pixels();

@@ -11,11 +11,11 @@ use raytracer_engine::engine::Scene;
 use raytracer_engine::geometry::Vector3;
 use raytracer_engine::sample::*;
 
-const SUBDIVISIONS: &[usize] = &[12, 8, 6, 3, 2];
+const SUBDIVISIONS: &[usize] = &[13, 11, 9, 7, 5, 4, 3, 2];
 
 fn eligible_to_step(x: usize, y: usize, step: usize) -> bool {
     if step >= SUBDIVISIONS.len() {
-        return eligible_to_last_step_for(x) || eligible_to_last_step_for(y);
+        return eligible_to_last_step_for(x) && eligible_to_last_step_for(y);
     }
     return eligible_to_step_for(x, step) || eligible_to_step_for(y, step);
 }
@@ -33,7 +33,7 @@ fn eligible_to_step_for(x: usize, step: usize) -> bool {
 }
 
 fn eligible_to_last_step_for(x: usize) -> bool {
-    for (i, item) in SUBDIVISIONS.iter().enumerate() {
+    for item in SUBDIVISIONS.iter() {
         if x % item == 0 {
             return false;
         }
@@ -71,7 +71,7 @@ impl Screen {
 
         let pixels = vec![0u8; width as usize * height as usize * 3];
 
-        let mut scene = get_transparent_sphere_in_sphere();
+        let mut scene = get_spheres_with_plane();
         scene.camera.x_resolution = width;
         scene.camera.y_resolution = height;
 
@@ -111,10 +111,8 @@ impl Screen {
 
     #[wasm_bindgen(js_name = renderStep)]
     pub fn render_step(&mut self, step: usize) {
-        //log!("start rendering step ...");
         self.initialize_step_rendering(step);
         let step_rendering = self.step_rendering.as_mut().unwrap();
-        //log!("... {} ...", step);
         for view_ray in step_rendering.viewport.iter() {
             let x = view_ray.x as usize;
             let y = view_ray.y as usize;
@@ -124,18 +122,15 @@ impl Screen {
                 print_pixel(&mut self.pixels, self.width, x, y, result);
             }
         }
-        //log!("done.");
     }
 
     pub fn render(&mut self) {
-        //log!("rendering ...");
         let screen = render(&self.scene);
         for ((xr, yr), color) in screen {
             let x = xr as usize;
             let y = yr as usize;
             print_pixel(&mut self.pixels, self.width, x, y, color);
         }
-        //log!("done.");
     }
 
     pub fn click(&mut self, x: u16, y: u16) {
