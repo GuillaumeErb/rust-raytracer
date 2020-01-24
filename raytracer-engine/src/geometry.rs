@@ -1,7 +1,10 @@
+use crate::parser::parse_obj;
+use serde;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::sync::Arc;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Point3 {
     pub x: f64,
     pub y: f64,
@@ -37,7 +40,7 @@ impl std::ops::Sub for &Point3 {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Point2 {
     pub x: f64,
     pub y: f64,
@@ -89,7 +92,7 @@ impl std::ops::Mul<f64> for &Vector2 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Object {
     Sphere(Sphere),
     Plane(Plane),
@@ -114,7 +117,7 @@ impl Object {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Sphere {
     pub center: Point3,
     pub radius: f64,
@@ -132,6 +135,7 @@ impl fmt::Debug for MeshTriangle {
     }
 }
 
+#[derive(Clone)]
 pub struct MeshTriangle {
     pub mesh: Arc<Mesh>,
     pub triangle_index: usize,
@@ -207,7 +211,7 @@ impl fmt::Debug for Mesh {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Plane {
     pub point: Point3,
     pub normal: Vector3,
@@ -219,7 +223,7 @@ pub struct Ray {
     pub direction: Vector3,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Vector3 {
     pub x: f64,
     pub y: f64,

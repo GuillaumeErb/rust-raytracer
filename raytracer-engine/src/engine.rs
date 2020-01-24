@@ -5,6 +5,8 @@ use crate::intersectable::*;
 use crate::light::*;
 use crate::material::*;
 use rayon::prelude::*;
+use serde::ser::SerializeStruct;
+use serde::{de, ser, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Instant;
 

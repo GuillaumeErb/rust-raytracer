@@ -20,7 +20,205 @@
 </head>
 
 <body>
-  <canvas id="raytracer-screen-canvas"></canvas>
+  <canvas id="raytracer-screen-canvas" tabindex='1'></canvas>
+  <br />
+  <textarea id="raytracer-scene-textarea" name="Scene" rows="10" cols="100" style="white-space: pre-wrap">
+    {
+      "objects": [
+          {
+              "geometry": {
+                  "sphere": {
+                      "center": {
+                          "x": 0.0,
+                          "y": 0.0,
+                          "z": 0.0
+                      },
+                      "radius": 5.0
+                  }
+              },
+              "material": {
+                  "ambientColor": {
+                      "Color": {
+                          "red": 0.1,
+                          "green": 1.0,
+                          "blue": 0.1
+                      }
+                  },
+                  "ambientReflection": 1.0,
+                  "diffuseColor": {
+                      "Color": {
+                          "red": 0.1,
+                          "green": 0.8,
+                          "blue": 0.1
+                      }
+                  },
+                  "diffuseReflection": 0.5,
+                  "specularColor": {
+                      "Color": {
+                          "red": 1.0,
+                          "green": 1.0,
+                          "blue": 1.0
+                      }
+                  },
+                  "specularReflection": 0.4,
+                  "shininess": 40.0,
+                  "reflectivity": 0.3,
+                  "transparency": 0.0,
+                  "indexOfRefraction": 0.0
+              }
+          },
+          {
+              "geometry": {
+                  "plane": {
+                      "point": {
+                          "x": 5.0,
+                          "y": 0.0,
+                          "z": 0.0
+                      },
+                      "normal": {
+                          "x": -0.8944271909999159,
+                          "y": 0.0,
+                          "z": -0.4472135954999579
+                      }
+                  }
+              },
+              "material": {
+                  "ambientColor": {
+                      "Color": {
+                          "red": 0.8,
+                          "green": 1.0,
+                          "blue": 0.8
+                      }
+                  },
+                  "ambientReflection": 0.1,
+                  "diffuseColor": {
+                      "Color": {
+                          "red": 1.0,
+                          "green": 1.0,
+                          "blue": 1.0
+                      }
+                  },
+                  "diffuseReflection": 0.4,
+                  "specularColor": {
+                      "Color": {
+                          "red": 0.0,
+                          "green": 0.0,
+                          "blue": 0.0
+                      }
+                  },
+                  "specularReflection": 0.0,
+                  "shininess": 1.0,
+                  "reflectivity": 0.2,
+                  "transparency": 0.0,
+                  "indexOfRefraction": 0.0
+              }
+          },
+          {
+              "geometry": {
+                  "sphere": {
+                      "center": {
+                          "x": -5.0,
+                          "y": 0.0,
+                          "z": -2.0
+                      },
+                      "radius": 2.0
+                  }
+              },
+              "material": {
+                  "ambientColor": {
+                      "Color": {
+                          "red": 0.0,
+                          "green": 0.0,
+                          "blue": 0.0
+                      }
+                  },
+                  "ambientReflection": 0.0,
+                  "diffuseColor": {
+                      "Color": {
+                          "red": 1.0,
+                          "green": 0.1,
+                          "blue": 0.1
+                      }
+                  },
+                  "diffuseReflection": 0.15915494309189535,
+                  "specularColor": {
+                      "Color": {
+                          "red": 0.0,
+                          "green": 0.0,
+                          "blue": 0.0
+                      }
+                  },
+                  "specularReflection": 0.0,
+                  "shininess": 1.0,
+                  "reflectivity": 0.0,
+                  "transparency": 0.9,
+                  "indexOfRefraction": 1.33
+              }
+          }
+      ],
+      "ambientLight": {
+          "color": {
+              "red": 1.0,
+              "green": 1.0,
+              "blue": 1.0
+          },
+          "intensity": 0.1
+      },
+      "lights": [
+          {
+              "PointLight": {
+                  "origin": {
+                      "x": 100.0,
+                      "y": 0.0,
+                      "z": 0.0
+                  },
+                  "intensity": 1.0,
+                  "color": {
+                      "red": 1.0,
+                      "green": 1.0,
+                      "blue": 1.0
+                  }
+              }
+          },
+          {
+              "DirectionalLight": {
+                  "direction": {
+                      "x": 0.8728715609439696,
+                      "y": 0.4364357804719848,
+                      "z": 0.2182178902359924
+                  },
+                  "intensity": 2.0,
+                  "color": {
+                      "red": 0.2,
+                      "green": 0.5,
+                      "blue": 1.0
+                  }
+              }
+          }
+      ],
+      "camera": {
+          "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": -20.0
+          },
+          "direction": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 1.0
+          },
+          "upDirection": {
+              "x": 0.0,
+              "y": 1.0,
+              "z": 0.0
+          },
+          "fieldOfView": 1.5707963267948966,
+          "xResolution": 500,
+          "yResolution": 250
+      }
+  }
+  </textarea>
+  <button id="raytracer-render-button">Render</button>
   <script src="./bootstrap.js"></script>
 </body>
 

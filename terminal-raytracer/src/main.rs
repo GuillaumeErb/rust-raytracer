@@ -4,7 +4,7 @@ use raytracer_engine::engine::Scene;
 use raytracer_engine::sample::*;
 
 fn main() -> Result<(), String> {
-    let mut scene = get_spheres_with_plane();
+    let mut scene = get_simple_mesh();
     scene.camera.x_resolution /= 10;
     scene.camera.y_resolution /= 10;
     render_scene_console(&scene)?;

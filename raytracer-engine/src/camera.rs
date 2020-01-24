@@ -1,7 +1,10 @@
 use crate::geometry::Point3;
 use crate::geometry::Ray;
 use crate::geometry::Vector3;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Camera {
     pub position: Point3,
     pub direction: Vector3,

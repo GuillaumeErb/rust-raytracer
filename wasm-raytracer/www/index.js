@@ -3,13 +3,32 @@ import { Screen } from "wasm-raytracer";
 
 const PIXEL_SIZE = 1; // px
 
-const screen = Screen.new();
-const width = screen.width();
-const height = screen.height();
-
+const textarea = document.getElementById("raytracer-scene-textarea");
+const renderButton = document.getElementById("raytracer-render-button");
 const canvas = document.getElementById("raytracer-screen-canvas");
-canvas.height = PIXEL_SIZE * height;
-canvas.width = PIXEL_SIZE * width;
+let screen = null;
+let width = 0;
+let height = 0;
+let animationId = null;
+var renderingStep = 0;
+
+
+const onClick = () => {
+    cancelAnimationFrame(animationId);
+
+    screen = Screen.new(textarea.value);
+    width = screen.width();
+    height = screen.height();
+    canvas.height = PIXEL_SIZE * height;
+    canvas.width = PIXEL_SIZE * width;
+
+    renderingStep = 0;
+    animationId = requestAnimationFrame(repeatOften);
+}
+
+renderButton.addEventListener("click", onClick);
+
+onClick();
 
 const ctx = canvas.getContext('2d');
 
@@ -69,9 +88,7 @@ canvas.addEventListener("click", event => {
     screen.click(row, col);
 });
 
-let animationId = null;
-var renderingStep = 0;
-document.addEventListener('keydown', function (event) {
+canvas.addEventListener('keydown', function (event) {
     cancelAnimationFrame(animationId);
     renderingStep = 0;
     screen.keydown(event.keyCode);

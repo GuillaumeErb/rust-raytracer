@@ -475,7 +475,7 @@ pub fn get_spheres_with_plane() -> Scene {
         },
     });
     let mut lights: Vec<Light> = vec![];
-    lights.push(Light::Point3Light(Point3Light {
+    lights.push(Light::PointLight(PointLight {
         origin: Point3 {
             x: 100f64,
             y: 0f64,

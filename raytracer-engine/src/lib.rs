@@ -5,7 +5,7 @@ pub mod geometry;
 mod intersectable;
 mod light;
 mod material;
-mod parser;
+pub mod parser;
 mod renderer;
 pub mod sample;
 mod texture;

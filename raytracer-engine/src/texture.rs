@@ -1,8 +1,9 @@
 use crate::color::{Color, BLACK, WHITE};
 use crate::geometry::{MeshTriangle, Object, Plane, Point2, Point3, Sphere, Vector3};
+use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Texture {
     pub pixels: Vec<Vec<Color>>,
     pub scale: f64,

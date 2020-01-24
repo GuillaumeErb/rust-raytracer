@@ -2,9 +2,11 @@ use crate::color::{Color, BLACK};
 use crate::engine::{cast_ray, is_in_shadow, Scene, SceneIntersection, TracedRay};
 use crate::geometry::{Object, Point3, Ray, Vector3};
 use crate::texture::Texture;
+use serde::{Deserialize, Serialize};
 use std::mem::swap;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Material {
     pub ambient_color: Coloration,
     pub ambient_reflection: f64,
@@ -18,7 +20,7 @@ pub struct Material {
     pub index_of_refraction: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Coloration {
     Color(Color),
     Texture(Texture),

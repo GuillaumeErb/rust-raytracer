@@ -9,6 +9,7 @@ use raytracer_engine::engine::render;
 use raytracer_engine::engine::render_pixel;
 use raytracer_engine::engine::Scene;
 use raytracer_engine::geometry::Vector3;
+use raytracer_engine::parser::deserialize_scene;
 use raytracer_engine::sample::*;
 
 const SUBDIVISIONS: &[usize] = &[13, 11, 9, 7, 5, 4, 3, 2];
@@ -63,17 +64,14 @@ pub struct StepRendering {
 
 #[wasm_bindgen]
 impl Screen {
-    pub fn new() -> Screen {
+    pub fn new(scene_string: String) -> Screen {
         utils::set_panic_hook();
 
-        let width = 600u16;
-        let height = 600u16;
+        let scene = deserialize_scene(&scene_string);
+        let width = scene.camera.x_resolution;
+        let height = scene.camera.y_resolution;
 
         let pixels = vec![0u8; width as usize * height as usize * 3];
-
-        let mut scene = get_spheres_with_plane();
-        scene.camera.x_resolution = width;
-        scene.camera.y_resolution = height;
 
         Screen {
             width,
