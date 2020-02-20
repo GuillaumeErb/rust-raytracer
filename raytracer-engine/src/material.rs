@@ -97,7 +97,7 @@ impl Material {
         }
         if self.transparency > 1e-6 && max_bounces > 0 {
             let outside_index_of_refraction = match ray.inside_objects.last() {
-                Some(x) => scene.objects[*x].material.index_of_refraction,
+                Some(x) => scene.objects.objects[*x].material.index_of_refraction,
                 None => 1f64,
             };
 

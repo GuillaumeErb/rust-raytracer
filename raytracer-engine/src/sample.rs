@@ -73,6 +73,7 @@ pub fn get_simple_mesh() -> Scene {
             index_of_refraction: 0f64,
         },
     });
+    id += 1;
     objects.push(SceneObject {
         id: id,
         geometry: Object::Sphere(Sphere {
@@ -153,7 +154,7 @@ pub fn get_simple_mesh() -> Scene {
     };
 
     Scene {
-        objects: objects,
+        objects: SceneObjects::initialize(objects),
         lights: lights,
         ambient_light: ambient_light,
         camera: standard_camera,
@@ -241,7 +242,7 @@ pub fn get_mesh() -> Scene {
     };
 
     Scene {
-        objects: objects,
+        objects: SceneObjects::initialize(objects),
         lights: lights,
         ambient_light: ambient_light,
         camera: standard_camera,
@@ -362,7 +363,7 @@ pub fn get_transparent_sphere_in_sphere() -> Scene {
     };
 
     Scene {
-        objects: objects,
+        objects: SceneObjects::initialize(objects),
         lights: lights,
         ambient_light: ambient_light,
         camera: standard_camera,
@@ -535,7 +536,7 @@ pub fn get_spheres_with_plane() -> Scene {
     };
 
     Scene {
-        objects: objects,
+        objects: SceneObjects::initialize(objects),
         lights: lights,
         ambient_light: ambient_light,
         camera: standard_camera,

@@ -67,7 +67,8 @@ impl Screen {
     pub fn new(scene_string: String) -> Screen {
         utils::set_panic_hook();
 
-        let scene = deserialize_scene(&scene_string);
+        let mut scene = deserialize_scene(&scene_string);
+        //scene.objects.build_kd_tree();
         let width = scene.camera.x_resolution;
         let height = scene.camera.y_resolution;
 
@@ -143,42 +144,42 @@ impl Screen {
         match self.selected_object {
             Some(id) => match keycode {
                 keycodes::KEY_M => {
-                    self.scene.objects[id].geometry.translate(&Vector3 {
+                    self.scene.objects.objects[id].geometry.translate(&Vector3 {
                         x: 1f64,
                         y: 0f64,
                         z: 0f64,
                     });
                 }
                 keycodes::KEY_K => {
-                    self.scene.objects[id].geometry.translate(&Vector3 {
+                    self.scene.objects.objects[id].geometry.translate(&Vector3 {
                         x: -1f64,
                         y: 0f64,
                         z: 0f64,
                     });
                 }
                 keycodes::KEY_O => {
-                    self.scene.objects[id].geometry.translate(&Vector3 {
+                    self.scene.objects.objects[id].geometry.translate(&Vector3 {
                         x: 0f64,
                         y: 1f64,
                         z: 0f64,
                     });
                 }
                 keycodes::KEY_L => {
-                    self.scene.objects[id].geometry.translate(&Vector3 {
+                    self.scene.objects.objects[id].geometry.translate(&Vector3 {
                         x: 0f64,
                         y: -1f64,
                         z: 0f64,
                     });
                 }
                 keycodes::KEY_I => {
-                    self.scene.objects[id].geometry.translate(&Vector3 {
+                    self.scene.objects.objects[id].geometry.translate(&Vector3 {
                         x: 0f64,
                         y: 0f64,
                         z: 1f64,
                     });
                 }
                 keycodes::KEY_P => {
-                    self.scene.objects[id].geometry.translate(&Vector3 {
+                    self.scene.objects.objects[id].geometry.translate(&Vector3 {
                         x: 0f64,
                         y: 0f64,
                         z: -1f64,

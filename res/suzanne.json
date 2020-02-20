@@ -32,7 +32,141 @@
                 },
                 "specularReflection": 0.4,
                 "shininess": 40.0,
-                "reflectivity": 0.3,
+                "reflectivity": 0.0,
+                "transparency": 0.0,
+                "indexOfRefraction": 0.0
+            }
+        },
+        {
+            "geometry": {
+                "sphere": {
+                    "center": {
+                        "x": -2,
+                        "y": 0.0,
+                        "z": -1.0
+                    },
+                    "radius": 1.5
+                }
+            },
+            "material": {
+                "ambientColor": {
+                    "Color": {
+                        "red": 0.6,
+                        "green": 0.1,
+                        "blue": 0.05
+                    }
+                },
+                "ambientReflection": 1.0,
+                "diffuseColor": {
+                    "Color": {
+                        "red": 1.0,
+                        "green": 0.2,
+                        "blue": 0.1
+                    }
+                },
+                "diffuseReflection": 0.5,
+                "specularColor": {
+                    "Color": {
+                        "red": 1.0,
+                        "green": 1.0,
+                        "blue": 1.0
+                    }
+                },
+                "specularReflection": 0.4,
+                "shininess": 40.0,
+                "reflectivity": 0.6,
+                "transparency": 0.0,
+                "indexOfRefraction": 0.0
+            }
+        },
+        {
+            "geometry": {
+                "plane": {
+                    "point": {
+                        "x": 0.0,
+                        "y": 10.0,
+                        "z": 0.0
+                    },
+                    "normal": {
+                        "x": 0.0,
+                        "y": -1.0,
+                        "z": 0.0
+                    }
+                }
+            },
+            "material": {
+                "ambientColor": {
+                    "Color": {
+                        "red": 0.0,
+                        "green": 0.0,
+                        "blue": 1.0
+                    }
+                },
+                "ambientReflection": 1,
+                "diffuseColor": {
+                    "Color": {
+                        "red": 0.0,
+                        "green": 0.0,
+                        "blue": 1.0
+                    }
+                },
+                "diffuseReflection": 0.7,
+                "specularColor": {
+                    "Color": {
+                        "red": 0.0,
+                        "green": 0.0,
+                        "blue": 0.0
+                    }
+                },
+                "specularReflection": 0.0,
+                "shininess": 1.0,
+                "reflectivity": 0.0,
+                "transparency": 0.0,
+                "indexOfRefraction": 0.0
+            }
+        },
+        {
+            "geometry": {
+                "plane": {
+                    "point": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": -200.0
+                    },
+                    "normal": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 1.0
+                    }
+                }
+            },
+            "material": {
+                "ambientColor": {
+                    "Color": {
+                        "red": 1.0,
+                        "green": 1.0,
+                        "blue": 0.0
+                    }
+                },
+                "ambientReflection": 1,
+                "diffuseColor": {
+                    "Color": {
+                        "red": 1.0,
+                        "green": 1.0,
+                        "blue": 0.0
+                    }
+                },
+                "diffuseReflection": 0.7,
+                "specularColor": {
+                    "Color": {
+                        "red": 0.0,
+                        "green": 0.0,
+                        "blue": 0.0
+                    }
+                },
+                "specularReflection": 0.0,
+                "shininess": 1.0,
+                "reflectivity": 0.0,
                 "transparency": 0.0,
                 "indexOfRefraction": 0.0
             }
@@ -44,20 +178,35 @@
             "green": 1.0,
             "blue": 1.0
         },
-        "intensity": 0.1
+        "intensity": 0.2
     },
     "lights": [
         {
             "DirectionalLight": {
                 "direction": {
-                    "x": 0.8728715609439696,
+                    "x": -0.8728715609439696,
                     "y": 0.4364357804719848,
-                    "z": 0.2182178902359924
+                    "z": -0.2182178902359924
                 },
                 "intensity": 2.0,
                 "color": {
-                    "red": 0.2,
-                    "green": 0.5,
+                    "red": 0.4,
+                    "green": 0.6,
+                    "blue": 1.0
+                }
+            }
+        },
+        {
+            "DirectionalLight": {
+                "direction": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": -1.0
+                },
+                "intensity": 2.0,
+                "color": {
+                    "red": 1.0,
+                    "green": 0.2,
                     "blue": 1.0
                 }
             }

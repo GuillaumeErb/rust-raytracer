@@ -1,6 +1,7 @@
 use crate::camera::Camera;
 use crate::engine::Scene;
 use crate::engine::SceneObject;
+use crate::engine::SceneObjects;
 use crate::geometry::{
     get_triangles, Mesh, MeshPlainTriangle, MeshVertex, Object, Plane, Point2, Point3, Sphere,
     Vector3,
@@ -135,13 +136,12 @@ fn parse_face_vertex(raw_vertex: &str) -> MeshVertex {
 
 pub fn deserialize_scene(serialized_scene: &str) -> Scene {
     let serde_scene: SerdeScene = serde_json::from_str(serialized_scene).unwrap();
-    let mut scene = Scene {
-        objects: deserialize_object(&serde_scene.objects),
+    Scene {
+        objects: SceneObjects::initialize(deserialize_object(&serde_scene.objects)),
         ambient_light: serde_scene.ambient_light,
         lights: serde_scene.lights,
         camera: serde_scene.camera,
-    };
-    scene
+    }
 }
 
 pub fn deserialize_object(serde_scene_objects: &Vec<SerdeSceneObject>) -> Vec<SceneObject> {

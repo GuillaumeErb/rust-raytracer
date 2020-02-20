@@ -4,9 +4,10 @@ use raytracer_engine::engine::Scene;
 use raytracer_engine::sample::*;
 
 fn main() -> Result<(), String> {
-    let mut scene = get_simple_mesh();
+    let mut scene = get_mesh();
     scene.camera.x_resolution /= 10;
     scene.camera.y_resolution /= 10;
+    //scene.objects.build_kd_tree();
     render_scene_console(&scene)?;
 
     Ok(())
