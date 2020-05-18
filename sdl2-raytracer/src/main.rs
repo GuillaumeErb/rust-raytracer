@@ -1,15 +1,15 @@
 use raytracer_engine::color::Color;
-use raytracer_engine::geometry::Vector3;
-use raytracer_engine::geometry::Object;
+use raytracer_engine::engine::get_object;
 use raytracer_engine::engine::render;
 use raytracer_engine::engine::Scene;
+use raytracer_engine::geometry::Vector3;
 use raytracer_engine::sample::*;
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
 fn main() -> Result<(), String> {
-    let mut scene = get_mesh();
+    let mut scene = get_spheres_with_plane();
     render_scene_sdl2(&mut scene)?;
     Ok(())
 }
@@ -39,6 +39,8 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
 
     render_frame_scene_sdl2(scene, &mut canvas, &mut texture, width, height)?;
 
+    let mut object_to_move_index: Option<usize> = None;
+
     'mainloop: loop {
         for event in sdl_context.event_pump()?.poll_iter() {
             let mut render = false;
@@ -52,73 +54,89 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
                     keycode: Some(Keycode::M),
                     ..
                 } => {
-                    let to_move = get_object_to_move(scene);
-                    to_move.translate(&Vector3 {
-                        x: 0f64,
-                        y: 0f64,
-                        z: -1f64,
-                    });
-                    render = true;
+                    render = translate_object(
+                        scene,
+                        object_to_move_index,
+                        &Vector3 {
+                            x: 0f64,
+                            y: 0f64,
+                            z: -1f64,
+                        },
+                    )
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::P),
                     ..
                 } => {
-                    let to_move = get_object_to_move(scene);
-                    to_move.translate(&Vector3 {
-                        x: 0f64,
-                        y: 0f64,
-                        z: 1f64,
-                    });
-                    render = true;
+                    render = translate_object(
+                        scene,
+                        object_to_move_index,
+                        &Vector3 {
+                            x: 0f64,
+                            y: 0f64,
+                            z: 1f64,
+                        },
+                    )
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Left),
                     ..
                 } => {
-                    let to_move = get_object_to_move(scene);
-                    to_move.translate(&Vector3 {
-                        x: -1f64,
-                        y: 0f64,
-                        z: 0f64,
-                    });
-                    render = true;
+                    render = translate_object(
+                        scene,
+                        object_to_move_index,
+                        &Vector3 {
+                            x: -1f64,
+                            y: 0f64,
+                            z: 0f64,
+                        },
+                    )
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Right),
                     ..
                 } => {
-                    let to_move = get_object_to_move(scene);
-                    to_move.translate(&Vector3 {
-                        x: 1f64,
-                        y: 0f64,
-                        z: 0f64,
-                    });
-                    render = true;
+                    render = translate_object(
+                        scene,
+                        object_to_move_index,
+                        &Vector3 {
+                            x: 1f64,
+                            y: 0f64,
+                            z: 0f64,
+                        },
+                    )
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Up),
                     ..
                 } => {
-                    let to_move = get_object_to_move(scene);
-                    to_move.translate(&Vector3 {
-                        x: 0f64,
-                        y: 1f64,
-                        z: 0f64,
-                    });
-                    render = true;
+                    render = translate_object(
+                        scene,
+                        object_to_move_index,
+                        &Vector3 {
+                            x: 0f64,
+                            y: 1f64,
+                            z: 0f64,
+                        },
+                    )
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Down),
                     ..
                 } => {
-                    let to_move = get_object_to_move(scene);
-                    to_move.translate(&Vector3 {
-                        x: 0f64,
-                        y: -1f64,
-                        z: 0f64,
-                    });
-                    render = true;
+                    render = translate_object(
+                        scene,
+                        object_to_move_index,
+                        &Vector3 {
+                            x: 0f64,
+                            y: -1f64,
+                            z: 0f64,
+                        },
+                    )
+                }
+                Event::MouseButtonDown { x, y, .. } => {
+                    object_to_move_index = get_object(scene, x as u16, y as u16);
+                    render = false;
                 }
                 _ => {}
             }
@@ -131,14 +149,19 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
     Ok(())
 }
 
-fn get_object_to_move<'a>(scene: &'a mut Scene) -> &'a mut Object {
-    &mut scene
-        .objects
-        .iter_mut()
-        .filter(|obj| obj.id == 1)
-        .nth(0)
-        .unwrap()
-        .geometry
+fn translate_object<'a>(
+    scene: &'a mut Scene,
+    object_to_move_index: Option<usize>,
+    direction: &Vector3,
+) -> bool {
+    match object_to_move_index {
+        Some(id) => {
+            scene.objects.objects[id].geometry.translate(direction);
+            return true;
+        }
+        None => {}
+    }
+    false
 }
 
 pub fn render_frame_scene_sdl2(
