@@ -9,7 +9,7 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
 fn main() -> Result<(), String> {
-    let mut scene = get_spheres_with_plane();
+    let mut scene = get_mesh();
     render_scene_sdl2(&mut scene)?;
     Ok(())
 }
@@ -37,6 +37,7 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
         .create_texture_target(sdl2::pixels::PixelFormatEnum::RGBA8888, width, height)
         .map_err(|e| e.to_string())?;
 
+    scene.objects.build_kd_tree();
     render_frame_scene_sdl2(scene, &mut canvas, &mut texture, width, height)?;
 
     let mut object_to_move_index: Option<usize> = None;
@@ -134,8 +135,15 @@ pub fn render_scene_sdl2(scene: &mut Scene) -> Result<(), String> {
                         },
                     )
                 }
+                Event::KeyDown {
+                    keycode: Some(Keycode::C),
+                    ..
+                } => {
+                    object_to_move_index = None;
+                }
                 Event::MouseButtonDown { x, y, .. } => {
                     object_to_move_index = get_object(scene, x as u16, y as u16);
+                    println!("Clicked on {:?}", object_to_move_index);
                     render = false;
                 }
                 _ => {}
@@ -157,11 +165,14 @@ fn translate_object<'a>(
     match object_to_move_index {
         Some(id) => {
             scene.objects.objects[id].geometry.translate(direction);
+            scene.objects.build_kd_tree();
             return true;
         }
-        None => {}
+        None => {
+            scene.camera.translate(direction);
+            return true;
+        }
     }
-    false
 }
 
 pub fn render_frame_scene_sdl2(

@@ -73,18 +73,18 @@ pub struct TracedRay {
 }
 
 pub fn render(scene: &Scene) -> HashMap<(u16, u16), Color> {
-    //let now = Instant::now();
+    let now = Instant::now();
     let viewport = scene.camera.generate_viewport();
     let screen: HashMap<_, _> = viewport
-        .iter()
-        //.par_iter()
+        //.iter()
+        .par_iter()
         .map(|view_ray| {
             let coordinates = (view_ray.x, view_ray.y);
             let result = render_pixel(scene, view_ray.ray.clone());
             (coordinates, result)
         })
         .collect();
-    //println!("{}", now.elapsed().as_millis());
+    println!("{}", now.elapsed().as_millis());
     screen
 }
 

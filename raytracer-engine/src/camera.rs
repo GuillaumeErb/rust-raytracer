@@ -72,4 +72,8 @@ impl Camera {
         }
         view_rays
     }
+
+    pub fn translate(&mut self, vector: &Vector3) {
+        self.position = self.position.add(vector);
+    }
 }
