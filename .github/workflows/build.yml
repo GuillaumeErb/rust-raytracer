@@ -1,0 +1,31 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build terminal
+      working-directory: terminal-raytracer
+      run: cargo build --verbose
+    - name: Run terminal tests
+      working-directory: terminal-raytracer
+      run: cargo test --verbose
+      
+    - name: Build sdl2
+      working-directory: sdl2-raytracer
+      run: cargo build --verbose
+    - name: Run sdl2 tests
+      working-directory: sdl2-raytracer
+      run: cargo test --verbose
