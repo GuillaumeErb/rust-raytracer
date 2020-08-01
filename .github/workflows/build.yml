@@ -16,8 +16,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: install_dependencies
+    - uses: actions/setup-node@v1
+    - name: install sdl2
       run: sudo apt-get install libsdl2-dev
+    - name: install wasm pack
+      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
         
     - name: Build terminal
       working-directory: terminal-raytracer
@@ -32,3 +35,10 @@ jobs:
     - name: Run sdl2 tests
       working-directory: sdl2-raytracer
       run: cargo test --verbose
+
+    - name: wasm pack build
+      working-directory: wasm-raytracer
+      run: wasm-pack build
+    - name: npm install
+      working-directory: wasm-raytracer/www
+      run: npm install
