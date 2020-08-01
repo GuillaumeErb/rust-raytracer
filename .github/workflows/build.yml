@@ -16,6 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: install_dependencies
+      run: sudo apt-get install libsdl2-dev
+        
     - name: Build terminal
       working-directory: terminal-raytracer
       run: cargo build --verbose
